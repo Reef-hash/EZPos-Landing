@@ -1,5 +1,5 @@
-# Use the official .NET 6 SDK image to build the app
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# Use the official .NET 10 SDK image to build the app
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Copy the solution file and restore dependencies
@@ -12,8 +12,8 @@ COPY . .
 WORKDIR /app/src/EZPos.Web.Ui
 RUN dotnet publish -c Release -o /out
 
-# Use the official .NET 6 ASP.NET Core runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+# Use the official .NET 10 ASP.NET Core runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /out .
 
