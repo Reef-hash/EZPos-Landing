@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Pembayaran Berjaya";
+}
+
+<div class="text-center mt-5 mb-5">
+    <div class="card shadow border-success mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-success text-white py-3">
+            <h3 class="my-0 fw-bold">Pembayaran Berjaya! 🎉</h3>
+        </div>
+        <div class="card-body p-5">
+            <h5 class="card-title text-muted mb-4">Terima kasih kerana memilih EZPos.</h5>
+            <p class="card-text">Berikut adalah Kunci Lesen rasmi anda. Sila salin dan simpan kod ini dengan selamat. Masukkan kod ini di dalam aplikasi Desktop EZPos anda untuk pengaktifan.</p>
+            
+            <div class="bg-light p-4 rounded border mt-4 mb-4">
+                <h2 class="text-primary fw-bold font-monospace mb-0" id="licenseKey">@ViewBag.LicenseKey</h2>
+            </div>
+            
+            <p class="text-muted small">Satu lesen ini hanya sah untuk digunakan pada satu peranti sahaja.</p>
+            
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary mt-3">Kembali ke Laman Utama</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Harga Perisian";
+}
+
+<div class="text-center mt-4 mb-5">
+    <h2 class="fw-bold">Satu Harga, Akses Selamanya</h2>
+    <p class="text-muted">Tiada kontrak rumit. Tiada yuran bulanan tersembunyi.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow border-primary text-center pb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="my-0 fw-normal">Lesen Seumur Hidup</h4>
+            </div>
+            <div class="card-body mt-3">
+                <h1 class="card-title pricing-card-title">RM 499 <small class="text-muted fw-light">/ peranti</small></h1>
+                <ul class="list-unstyled mt-4 mb-4 text-start px-4">
+                    <li class="mb-2">✔️ Akses penuh fungsi POS Teras</li>
+                    <li class="mb-2">✔️ Pangkalan data persendirian (Offline)</li>
+                    <li class="mb-2">✔️ Sistem laporan jualan</li>
+                    <li class="mb-2">✔️ Pengurusan stok mudah</li>
+                    <li class="mb-2">✔️ Sokongan teknikal melalui WhatsApp</li>
+                </ul>
+                
+                <!-- INI ADALAH PERUBAHAN BARU: Butang disambungkan ke fungsi Stripe Checkout -->
+                <form action="/Payment/CreateCheckoutSession" method="POST">
+                    <button type="submit" class="btn btn-lg btn-primary w-75 fw-bold">Beli & Aktifkan Lesen</button>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-5">
+    <p>Perlukan lesen untuk lebih daripada satu kedai atau peranti? <br/>
+    <a href="https://wa.me/60123456789" class="text-decoration-none fw-bold" target="_blank">Bincang dengan kami di WhatsApp</a></p>
+</div>

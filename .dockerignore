@@ -1,0 +1,12 @@
+**/.git
+**/.github
+**/bin
+**/obj
+**/out
+**/docs
+.vscode
+.vs
+*.db
+*.db-shm
+*.db-wal
+node_modules

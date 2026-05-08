@@ -1,0 +1,45 @@
+/* Mengemaskan keseluruhan tulisan dan susunan latar */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Rekaan untuk latar belakang biru di muka depan */
+.hero-section {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+}
+
+/* Rekaan khas untuk butang WhatsApp terapung di penjuru bawah kanan */
+.whatsapp-float {
+    position: fixed;
+    width: auto;
+    height: 50px;
+    bottom: 40px;
+    right: 40px;
+    background-color: #25d366;
+    color: #FFF;
+    border-radius: 50px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 2px 2px 3px #999;
+    z-index: 100;
+    padding: 12px 20px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.whatsapp-float:hover {
+    background-color: #128c7e;
+    color: #FFF;
+    transform: scale(1.05);
+}
+
+/* Penyesuaian responsif untuk paparan telefon bimbit */
+@media (max-width: 768px) {
+    .whatsapp-float {
+        bottom: 20px;
+        right: 20px;
+    }
+}
