@@ -2,14 +2,64 @@
     ViewData["Title"] = "Pembayaran Dibatalkan";
 }
 
-<div class="text-center mt-5 mb-5">
-    <div class="card shadow border-danger mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-danger text-white py-3">
-            <h3 class="my-0 fw-bold">Pembayaran Dibatalkan ❌</h3>
+<style>
+    .result-page {
+        min-height: calc(100vh - 60px - 72px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 24px;
+    }
+
+    .result-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        max-width: 480px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .result-card-top {
+        background: rgba(239,68,68,.05);
+        border-bottom: 1px solid rgba(239,68,68,.15);
+        padding: 32px 36px;
+        text-align: center;
+    }
+
+    .cancel-icon {
+        width: 56px; height: 56px;
+        background: rgba(239,68,68,.1);
+        border: 2px solid rgba(239,68,68,.25);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px;
+    }
+
+    .cancel-icon svg { width: 26px; height: 26px; stroke: #ef4444; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    .result-card-top h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+    .result-card-top p { color: #9ca3af; font-size: .9rem; margin: 0; }
+
+    .result-card-body { padding: 28px 36px; text-align: center; }
+    .result-card-body p { font-size: .9rem; color: #9ca3af; margin-bottom: 24px; }
+</style>
+
+<div class="result-page">
+    <div class="result-card">
+        <div class="result-card-top">
+            <div class="cancel-icon">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>
+            <h2>Pembayaran Dibatalkan</h2>
+            <p>Tiada caj dikenakan ke atas akaun anda.</p>
         </div>
-        <div class="card-body p-5">
-            <p class="card-text">Proses pembayaran anda telah dibatalkan atau tidak berjaya. Tiada caj dikenakan ke atas akaun anda.</p>
-            <a asp-controller="Home" asp-action="Pricing" class="btn btn-primary mt-3">Cuba Semula</a>
+        <div class="result-card-body">
+            <p>Proses pembayaran tidak diselesaikan. Anda boleh cuba semula pada bila-bila masa.</p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                <a asp-controller="Home" asp-action="Pricing" class="btn-primary">Cuba Semula</a>
+                <a href="https://wa.me/60195778954?text=Hai%20EZPos%2C%20saya%20ada%20masalah%20semasa%20pembayaran." class="btn-outline" target="_blank">Hubungi Kami</a>
+            </div>
         </div>
     </div>
 </div>

@@ -1,0 +1,235 @@
+@{
+    ViewData["Title"] = "CrossxPos — Restaurant POS";
+}
+
+<style>
+    .cx-hero {
+        padding: 100px 24px 80px;
+        text-align: center;
+    }
+
+    .cx-hero h1 {
+        font-size: clamp(2.2rem, 5vw, 3.4rem);
+        font-weight: 800;
+        letter-spacing: -1.5px;
+        line-height: 1.15;
+        margin-bottom: 20px;
+    }
+
+    .cx-hero h1 span { color: var(--amber); }
+
+    .cx-hero p {
+        font-size: 1.05rem;
+        color: #9ca3af;
+        max-width: 560px;
+        margin: 0 auto 36px;
+    }
+
+    .cx-hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(245,158,11,.08);
+        border: 1px solid rgba(245,158,11,.18);
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: .78rem;
+        font-weight: 600;
+        color: #d97706;
+        margin-bottom: 20px;
+    }
+
+    /* ── Feature grid ── */
+    .cx-features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    @@media (max-width: 900px) { .cx-features { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 580px) { .cx-features { grid-template-columns: 1fr; } }
+
+    .cx-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        transition: border-color .2s;
+    }
+
+    .cx-card:hover { border-color: #3a3a3a; }
+
+    .cx-icon {
+        width: 42px; height: 42px;
+        background: rgba(245,158,11,.08);
+        border: 1px solid rgba(245,158,11,.18);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 14px;
+    }
+
+    .cx-icon svg { width: 20px; height: 20px; stroke: var(--amber); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .cx-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+    .cx-card p { font-size: .85rem; color: #9ca3af; margin: 0; line-height: 1.6; }
+
+    /* ── Platform section ── */
+    .platform-section {
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 60px 24px;
+        text-align: center;
+    }
+
+    .platform-section h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: 12px; }
+    .platform-section p { color: #9ca3af; font-size: .9rem; max-width: 500px; margin: 0 auto 32px; }
+
+    .platform-pills {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .platform-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .platform-pill svg { width: 18px; height: 18px; stroke: var(--amber); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── CTA ── */
+    .cx-cta { text-align: center; padding: 80px 24px; }
+    .cx-cta h2 { font-size: 1.8rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: 12px; }
+    .cx-cta p { color: #9ca3af; margin-bottom: 28px; }
+</style>
+
+<!-- Hero -->
+<section class="cx-hero">
+    <div class="platform-badge">Android &bull; iOS &bull; PWA &bull; Capacitor-ready</div>
+    <h1>Restaurant POS for<br /><span>Modern F&amp;B Operations</span></h1>
+    <p>Manage tables, orders, kitchen workflow, and reports in one app &mdash; works offline, installable on Android &amp; iOS.</p>
+    <div class="cx-hero-actions">
+        <a asp-controller="CrossxPos" asp-action="Pricing" class="btn-primary">View Pricing &rarr;</a>
+        <a href="https://wa.me/60195778954?text=Hi%2C%20I%27m%20interested%20in%20CrossxPos." class="btn-outline" target="_blank">Contact Us</a>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="section">
+    <div class="container">
+        <div class="label-tag">Features</div>
+        <h2 style="font-size:1.6rem; font-weight:800; letter-spacing:-.5px; margin-bottom:8px;">Everything your restaurant needs.</h2>
+        <p style="color:#9ca3af; margin-bottom:36px; font-size:.9rem;">From tables to kitchen to reports &mdash; integrated in one system.</p>
+
+        <div class="cx-features">
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h3>Table Management</h3>
+                <p>Visual floor map with real-time status. Tap a table to start an order. Reserve, transfer, or merge tables directly from the floor view.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                </div>
+                <h3>Cashier &amp; KOT</h3>
+                <p>Fast POS with scrollable category tabs, product modifiers (size, toppings, add-ons), cash &amp; card payment, and auto-send KOT to the kitchen.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <h3>Kitchen Display</h3>
+                <p>Live order queue for kitchen staff. Mark items ready, auto-serve to the table. Paperless, no shouting, no lost tickets.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                </div>
+                <h3>Menu Management</h3>
+                <p>Drag-and-drop categories and items, modifier groups (toppings, size, add-ons), duplicate products, and sold-out toggle.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h3>Sales Reports</h3>
+                <p>Daily and monthly summaries, hourly sales chart, breakdown by category and payment method, void orders, and CSV export (Pro).</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                </div>
+                <h3>Staff &amp; Role Management</h3>
+                <p>PIN login with four distinct roles &mdash; Admin, Cashier, Waiter, Kitchen. Each role sees only the pages they need.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h3>Shift Management</h3>
+                <p>Open and close cashier shifts. Track sales per shift, view cashier-scoped history, and get alerts when a shift exceeds 12 hours.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <h3>Table Reservations</h3>
+                <p>Reserve tables by customer name, phone, date &amp; time, and pax count. Seat or cancel reservations directly from the floor map.</p>
+            </div>
+            <div class="cx-card">
+                <div class="cx-icon">
+                    <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                </div>
+                <h3>Transfer &amp; Merge Tables</h3>
+                <p>Move a live order to any free table in one tap. Merge two occupied tables into a single combined order &mdash; items and all.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Platform section -->
+<div class="platform-section">
+    <div class="label-tag">Multi-Platform</div>
+    <h2>One App. Every Device.</h2>
+    <p>Built as a PWA &mdash; installable directly on Android &amp; iOS via Capacitor, no app store required.</p>
+    <div class="platform-pills">
+        <div class="platform-pill">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            Android
+        </div>
+        <div class="platform-pill">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            iOS
+        </div>
+        <div class="platform-pill">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Browser (PWA)
+        </div>
+        <div class="platform-pill">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            Offline-first
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<section class="cx-cta">
+    <div class="label-tag">Get Started</div>
+    <h2>Ready for your restaurant?</h2>
+    <p>Choose a plan and activate CrossxPos today.</p>
+    <a asp-controller="CrossxPos" asp-action="Pricing" class="btn-primary">View Plans &amp; Pricing &rarr;</a>
+</section>

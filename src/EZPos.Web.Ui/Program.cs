@@ -1,4 +1,5 @@
 using EZPos.Web.Ui.Data;
+using EZPos.Web.Ui.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,13 +16,49 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 2. Tambahkan servis MVC dan Web API
 builder.Services.AddControllersWithViews();
 
+// 2a. Daftarkan CrossxPos license generator
+builder.Services.AddSingleton<CrossxLicenseService>();
+
+// 3a. Admin panel authentication (cookie-based)
+builder.Services.AddAuthentication("AdminCookie")
+    .AddCookie("AdminCookie", options =>
+    {
+        options.LoginPath          = "/Admin/Login";
+        options.Cookie.Name        = "EZPosAdmin";
+        options.Cookie.HttpOnly    = true;
+        options.Cookie.SameSite    = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan     = TimeSpan.FromHours(8);
+        options.SlidingExpiration  = true;
+    });
+
 var app = builder.Build();
 
 // 3. Pastikan pangkalan data dicipta secara automatik
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
+    if (app.Environment.IsDevelopment())
+    {
+        dbContext.Database.EnsureDeleted();
+        dbContext.Database.EnsureCreated();
+    }
+    else
+    {
+        dbContext.Database.EnsureCreated();
+    }
+
+    // Seed tetapan lalai (hanya jika belum ada)
+    if (!dbContext.SiteSettings.Any(s => s.Key == "LicensePrice"))
+        dbContext.SiteSettings.Add(new EZPos.Web.Ui.Models.SiteSetting { Key = "LicensePrice", Value = "499.00" });
+
+    if (!dbContext.SiteSettings.Any(s => s.Key == "CrossxBasicPrice"))
+        dbContext.SiteSettings.Add(new EZPos.Web.Ui.Models.SiteSetting { Key = "CrossxBasicPrice", Value = "299.00" });
+
+    if (!dbContext.SiteSettings.Any(s => s.Key == "CrossxProPrice"))
+        dbContext.SiteSettings.Add(new EZPos.Web.Ui.Models.SiteSetting { Key = "CrossxProPrice", Value = "499.00" });
+
+    dbContext.SaveChanges();
 }
 
 // 4. Konfigurasi Kunci Keselamatan Stripe
@@ -44,9 +81,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // 5. Konfigurasi laluan (Routing)
+app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

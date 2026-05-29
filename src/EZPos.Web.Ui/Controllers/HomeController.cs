@@ -1,18 +1,28 @@
+using EZPos.Web.Ui.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EZPos.Web.Ui.Controllers
 {
     public class HomeController : Controller
     {
-        // Apabila URL utama dibuka, ia akan memaparkan fail Index.cshtml (Landing Page)
+        private readonly AppDbContext _context;
+
+        public HomeController(AppDbContext context)
+        {
+            _context = context;
+        }
+
         public IActionResult Index()
         {
             return View();
         }
 
-        // Apabila URL /Home/Pricing dibuka, ia akan memaparkan fail Pricing.cshtml
         public IActionResult Pricing()
         {
+            var priceStr = _context.SiteSettings
+                .FirstOrDefault(s => s.Key == "LicensePrice")?.Value ?? "499.00";
+
+            ViewData["LicensePrice"] = priceStr;
             return View();
         }
     }

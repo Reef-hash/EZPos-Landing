@@ -10,5 +10,6 @@ namespace EZPos.Web.Ui.Data
         }
 
         public DbSet<License> Licenses => Set<License>();
+        public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
     }
 }
