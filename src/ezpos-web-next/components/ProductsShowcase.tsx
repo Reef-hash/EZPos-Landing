@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
@@ -19,6 +19,7 @@ import {
   faStore,
   faShop,
 } from '@fortawesome/free-solid-svg-icons';
+import { getProductLinks } from '@/lib/links';
 
 const ezposFeatures = [
   'Process sales and receipts instantly',
@@ -40,23 +41,7 @@ const crossxFeatures = [
 
 export default function ProductsShowcase() {
   const [activeTab, setActiveTab] = useState<'ezpos' | 'crossx'>('ezpos');
-  const backendBase = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
-
-  const links = useMemo(() => {
-    if (backendBase) {
-      return {
-        ezposPricing: `${backendBase}/Home/Pricing`,
-        crossxPricing: `${backendBase}/CrossxPos/Pricing`,
-        crossxLearnMore: `${backendBase}/CrossxPos/Index`,
-      };
-    }
-
-    return {
-      ezposPricing: '/pricing',
-      crossxPricing: '/pricing',
-      crossxLearnMore: '/pricing',
-    };
-  }, [backendBase]);
+  const links = getProductLinks();
 
   return (
     <Box

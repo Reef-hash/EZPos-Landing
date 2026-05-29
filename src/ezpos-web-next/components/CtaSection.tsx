@@ -7,10 +7,12 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import { getProductLinks } from '@/lib/links';
 
 export default function CtaSection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
+  const links = getProductLinks();
 
   return (
     <Box
@@ -72,7 +74,7 @@ export default function CtaSection() {
                 variant="h2"
                 sx={{ color: 'white', mb: 2, fontSize: { xs: '1.8rem', md: '2.4rem' } }}
               >
-                Ready to launch EZPos with confidence?
+                Ready to launch with the right product?
               </Typography>
               <Typography
                 sx={{
@@ -83,11 +85,11 @@ export default function CtaSection() {
                   fontSize: '1rem',
                 }}
               >
-                Start with a polished customer-facing foundation and expand without refactoring.
+                Choose EZPos for retail desktop flow or CrossxPos for restaurant operations.
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link href="/pricing" style={{ textDecoration: 'none' }}>
+                <Link href={links.ezposPricing} style={{ textDecoration: 'none' }}>
                   <Button
                     variant="contained"
                     size="large"
@@ -101,25 +103,41 @@ export default function CtaSection() {
                       },
                     }}
                   >
-                    Get EZPos License
+                    EZPos Pricing
                   </Button>
                 </Link>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  sx={{
-                    py: 1.6,
-                    px: 4,
-                    borderColor: 'rgba(255,255,255,0.18)',
-                    color: 'rgba(255,255,255,0.8)',
-                    '&:hover': {
-                      borderColor: 'rgba(255,255,255,0.35)',
-                      background: 'rgba(255,255,255,0.04)',
-                    },
-                  }}
-                >
-                  Contact Sales
-                </Button>
+                <Link href={links.crossxPricing} style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    sx={{
+                      py: 1.6,
+                      px: 4,
+                      borderColor: 'rgba(255,255,255,0.18)',
+                      color: 'rgba(255,255,255,0.8)',
+                      '&:hover': {
+                        borderColor: 'rgba(255,255,255,0.35)',
+                        background: 'rgba(255,255,255,0.04)',
+                      },
+                    }}
+                  >
+                    CrossxPos Pricing
+                  </Button>
+                </Link>
+                <Link href={links.adminLogin} style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="text"
+                    size="large"
+                    sx={{
+                      py: 1.6,
+                      px: 2,
+                      color: 'rgba(255,255,255,0.6)',
+                      '&:hover': { color: 'white' },
+                    }}
+                  >
+                    Admin Login
+                  </Button>
+                </Link>
               </Box>
             </Box>
           </Box>

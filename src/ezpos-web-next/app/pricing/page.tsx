@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PricingPage from "./PricingPage";
 
 export const metadata: Metadata = {
-  title: "Pricing — EZPos",
-  description: "Simple, transparent plans for EZPos POS licensing. One-time purchase with lifetime updates.",
+  title: "Pricing — EZPos & CrossxPos",
+  description: "Complete pricing for EZPos desktop and CrossxPos restaurant licenses, including plan differences and activation flow.",
 };
 
 export default function Page() {

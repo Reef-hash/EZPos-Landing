@@ -15,17 +15,21 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
+import { getProductLinks } from '@/lib/links';
 
 const navLinks = [
   { label: 'Home', href: '/' },
+  { label: 'Products', href: '/#our-products' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Features', href: '/#features' },
+  { label: 'Admin', href: '/admin' },
   { label: 'Contact', href: '/#contact' },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 40 });
+  const links = getProductLinks();
 
   return (
     <>
@@ -115,12 +119,29 @@ export default function Navbar() {
 
           {/* CTA + Mobile Menu Toggle */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Link href={links.adminLogin} style={{ textDecoration: 'none' }}>
+              <Button
+                variant="outlined"
+                sx={{
+                  display: { xs: 'none', sm: 'flex' },
+                  borderColor: 'rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.75)',
+                  '&:hover': {
+                    borderColor: 'rgba(255,255,255,0.35)',
+                    color: 'white',
+                    background: 'rgba(255,255,255,0.05)',
+                  },
+                }}
+              >
+                Admin
+              </Button>
+            </Link>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Link href="/pricing" style={{ textDecoration: 'none' }}>
+              <Link href={links.ezposPricing} style={{ textDecoration: 'none' }}>
                 <Button
                   variant="contained"
                   sx={{
@@ -200,7 +221,7 @@ export default function Navbar() {
           ))}
         </List>
         <Box sx={{ px: 1, mt: 2 }}>
-          <Link href="/pricing" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+          <Link href={links.ezposPricing} style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
             <Button
               variant="contained"
               fullWidth
@@ -210,6 +231,20 @@ export default function Navbar() {
               }}
             >
               Get License
+            </Button>
+          </Link>
+          <Link href={links.adminLogin} style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={{
+                mt: 1.2,
+                py: 1.3,
+                borderColor: 'rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.75)',
+              }}
+            >
+              Admin Login
             </Button>
           </Link>
         </Box>

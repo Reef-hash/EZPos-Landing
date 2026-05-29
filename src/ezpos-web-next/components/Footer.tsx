@@ -2,19 +2,19 @@ import Link from 'next/link';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-
-const footerLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Contact', href: '/#contact' },
-  { label: 'Terms', href: '#' },
-  { label: 'Privacy', href: '#' },
-];
+import { getProductLinks } from '@/lib/links';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const links = getProductLinks();
+  const footerLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Products', href: '/#our-products' },
+    { label: 'EZPos Pricing', href: links.ezposPricing },
+    { label: 'CrossxPos Pricing', href: links.crossxPricing },
+    { label: 'Admin Login', href: links.adminLogin },
+    { label: 'Features', href: '/#features' },
+  ];
 
   return (
     <Box
