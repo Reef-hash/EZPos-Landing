@@ -979,11 +979,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
+      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
       "projectName": "EZPos.Web.App",
-      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
+      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
       "packagesPath": "C:\\Users\\Che Has\\.nuget\\packages\\",
-      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.App\\obj\\",
+      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.App\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Che Has\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -998,11 +998,11 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj": {
-              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj"
+            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj": {
+              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj"
             },
-            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj": {
-              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj"
+            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj": {
+              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj"
             }
           }
         }

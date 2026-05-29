@@ -960,11 +960,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj",
+      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj",
       "projectName": "EZPos.Web.Infra",
-      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj",
+      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Infra\\EZPos.Web.Infra.csproj",
       "packagesPath": "C:\\Users\\Che Has\\.nuget\\packages\\",
-      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Infra\\obj\\",
+      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Infra\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Che Has\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -979,8 +979,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj": {
-              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj"
+            "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj": {
+              "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj"
             }
           }
         }

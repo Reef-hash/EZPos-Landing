@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EZPos.Web.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a0c7880dd7aed2db47a06e90c1325a6da9133f9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+563d19b1b6fa9f0590115bc693e44593d424f155")]
 [assembly: System.Reflection.AssemblyProductAttribute("EZPos.Web.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EZPos.Web.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -7,6 +7,8 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBolt, faCircleCheck, faCrown } from '@fortawesome/free-solid-svg-icons';
 
 const floatingVariants = {
   animate: {
@@ -91,7 +93,8 @@ export default function Hero() {
           <motion.div variants={containerVariants} initial="hidden" animate="visible">
             <motion.div variants={itemVariants}>
               <Chip
-                label="✦ Premium POS Licensing Platform"
+                icon={<FontAwesomeIcon icon={faCrown} />}
+                label="Premium POS Licensing Platform"
                 sx={{
                   mb: 3,
                   background: 'rgba(108,99,255,0.12)',
@@ -266,17 +269,18 @@ export default function Hero() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.5rem',
+                      fontSize: '1.2rem',
                     }}
                   >
-                    ⚡
+                    <FontAwesomeIcon icon={faBolt} />
                   </Box>
                   <Box>
                     <Typography sx={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>
                       EZPos Dashboard
                     </Typography>
                     <Typography sx={{ color: '#4ECDC4', fontSize: '0.78rem', fontWeight: 600 }}>
-                      ● License Active
+                      <FontAwesomeIcon icon={faCircleCheck} style={{ marginRight: 6 }} />
+                      License Active
                     </Typography>
                   </Box>
                 </Box>

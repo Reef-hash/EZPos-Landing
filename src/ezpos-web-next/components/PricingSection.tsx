@@ -7,7 +7,8 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
 
 interface PricingCardProps {
   planName: string;
@@ -143,7 +144,7 @@ function PricingCard({
                   color: isFeatured ? '#8A84FF' : '#4ECDC4',
                 }}
               >
-                ✓
+                <FontAwesomeIcon icon={faCheck} />
               </Box>
               <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.88rem' }}>
                 {f}
@@ -310,8 +311,17 @@ export default function PricingSection({ showHeader = true }: { showHeader?: boo
           transition={{ duration: 0.6, delay: 0.5 }}
           style={{ textAlign: 'center', marginTop: '40px' }}
         >
-          <Typography sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem' }}>
-            🔒 Secure payment processing · No hidden fees · Lifetime updates included
+          <Typography
+            sx={{
+              color: 'rgba(255,255,255,0.3)',
+              fontSize: '0.82rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <FontAwesomeIcon icon={faLock} />
+            Secure payment processing · No hidden fees · Lifetime updates included
           </Typography>
         </motion.div>
       </Container>

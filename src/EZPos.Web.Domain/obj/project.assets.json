@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj",
+      "projectUniqueName": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj",
       "projectName": "EZPos.Web.Domain",
-      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj",
+      "projectPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\EZPos.Web.Domain.csproj",
       "packagesPath": "C:\\Users\\Che Has\\.nuget\\packages\\",
-      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.Domain\\obj\\",
+      "outputPath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.Domain\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Che Has\\AppData\\Roaming\\NuGet\\NuGet.Config"

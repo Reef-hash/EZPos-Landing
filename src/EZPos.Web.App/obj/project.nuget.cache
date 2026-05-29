@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "CSyTsKV3O4A=",
+  "dgSpecHash": "FAz2YQf03FY=",
   "success": true,
-  "projectFilePath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPOS\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
+  "projectFilePath": "D:\\#_Programming\\#_Github_Repo\\Production-Repository\\EZPos-Web\\src\\EZPos.Web.App\\EZPos.Web.App.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Che Has\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.4\\microsoft.entityframeworkcore.10.0.4.nupkg.sha512",
     "C:\\Users\\Che Has\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.4\\microsoft.entityframeworkcore.abstractions.10.0.4.nupkg.sha512",

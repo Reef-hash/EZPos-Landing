@@ -15,4 +15,7 @@ obj/
 # SQLite databases
 *.db
 *.db-shm
-*.db-wal
+*.db-wal
+
+# Local-only secrets (never commit)
+**/appsettings.Local.json

@@ -9,6 +9,9 @@ using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Local-only override for developer machine secrets (gitignored file).
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // 1. Tambahkan servis Pangkalan Data (SQLite)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));

@@ -5,40 +5,56 @@ import { motion, useInView } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  faBolt,
+  faShieldHalved,
+  faChartLine,
+  faBoxesStacked,
+  faBuilding,
+  faRocket,
+} from '@fortawesome/free-solid-svg-icons';
 
-const features = [
+type Feature = {
+  icon: IconDefinition;
+  title: string;
+  description: string;
+};
+
+const features: Feature[] = [
   {
-    icon: '⚡',
+    icon: faBolt,
     title: 'Fast Onboarding',
     description:
       'Simple, guided flow from landing page to checkout-ready plan selection in minutes — no friction, no confusion.',
   },
   {
-    icon: '🔐',
+    icon: faShieldHalved,
     title: 'Secure License Foundation',
     description:
       'API-based key generation and real-time online validation. Each license is cryptographically secured and tied to your deployment.',
   },
   {
-    icon: '📊',
+    icon: faChartLine,
     title: 'Dashboard Expansion',
     description:
       'Layout and component strategy built for future customer portal growth. Add analytics, usage tracking, and admin panels without rebuilding.',
   },
   {
-    icon: '🌿',
+    icon: faBoxesStacked,
     title: 'Inventory Visibility',
     description:
       'Track products across all branches in real time. Low stock alerts, reorder suggestions, and full audit trails included.',
   },
   {
-    icon: '🏢',
+    icon: faBuilding,
     title: 'Multi-Branch Ready',
     description:
       'Centralized control panel for multi-location rollouts. Manage licenses, users, and data from a single dashboard.',
   },
   {
-    icon: '🚀',
+    icon: faRocket,
     title: 'Ship-Ready UI',
     description:
       'Production-grade components with TypeScript, accessibility-first design, and full dark mode by default.',
@@ -191,11 +207,11 @@ export default function FeaturesGrid() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.6rem',
+                    fontSize: '1.3rem',
                     mb: 2.5,
                   }}
                 >
-                  {feature.icon}
+                  <FontAwesomeIcon icon={feature.icon} />
                 </Box>
 
                 <Typography
