@@ -1,0 +1,141 @@
+import { Router, Request, Response } from 'express';
+import { stripe } from '../lib/stripe';
+import { supabase } from '../lib/supabase';
+import { z } from 'zod';
+
+const router = Router();
+
+const checkoutSchema = z.object({
+  planId: z.string().uuid(),
+  product: z.enum(['ezpos', 'crossxpos']),
+  addonIds: z.array(z.string().uuid()).optional().default([]),
+  customerEmail: z.string().email(),
+  customerName: z.string().min(1),
+});
+
+// POST /api/payments/checkout — create Stripe Checkout session
+router.post('/checkout', async (req: Request, res: Response) => {
+  const parsed = checkoutSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
+    return;
+  }
+
+  const { planId, product, addonIds, customerEmail, customerName } = parsed.data;
+
+  // Fetch plan from DB
+  const { data: plan, error: planError } = await supabase
+    .from('pricing_plans')
+    .select('*')
+    .eq('id', planId)
+    .eq('product', product)
+    .eq('is_active', true)
+    .single();
+
+  if (planError || !plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  const addons = addonIds.length > 0
+    ? (await supabase
+      .from('addons')
+      .select('*')
+      .in('id', addonIds)
+      .eq('is_active', true)).data ?? []
+    : [];
+
+  const invalidAddonCount = addons.length !== addonIds.length;
+  if (invalidAddonCount) {
+    res.status(400).json({ error: 'Some add-ons are invalid or inactive' });
+    return;
+  }
+
+  const invalidProductAddon = addons.some(a => a.product !== 'all' && a.product !== product);
+  if (invalidProductAddon) {
+    res.status(400).json({ error: 'One or more add-ons are not available for this product' });
+    return;
+  }
+
+  try {
+    const lineItems = [
+      {
+        price_data: {
+          currency: 'myr',
+          product_data: {
+            name: `${plan.product_label} — ${plan.name}`,
+            description: plan.description,
+          },
+          unit_amount: Math.round(plan.price_myr * 100),
+        },
+        quantity: 1,
+      },
+      ...addons.map(addon => ({
+        price_data: {
+          currency: 'myr',
+          product_data: {
+            name: `Add-on: ${addon.name}`,
+            description: addon.description,
+            images: addon.image_url ? [addon.image_url] : undefined,
+          },
+          unit_amount: Math.round(addon.price_myr * 100),
+        },
+        quantity: 1,
+      })),
+    ];
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'fpx'],
+      customer_email: customerEmail,
+      line_items: lineItems,
+      mode: 'payment',
+      metadata: {
+        planId,
+        product,
+        customerName,
+        planName: plan.name,
+        addonIds: JSON.stringify(addonIds),
+      },
+      success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/pricing`,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error('Stripe error:', err);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// GET /api/payments/session/:sessionId — verify payment and return license info
+router.get('/session/:sessionId', async (req: Request, res: Response) => {
+  const { sessionId } = req.params;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+      res.status(402).json({ error: 'Payment not completed' });
+      return;
+    }
+
+    // Fetch the generated license key for this session
+    const { data: license, error } = await supabase
+      .from('licenses')
+      .select('key, product, plan_name, expires_at, customer_name, customer_email')
+      .eq('stripe_session_id', sessionId)
+      .single();
+
+    if (error || !license) {
+      res.status(404).json({ error: 'License not found yet. Please wait a moment.' });
+      return;
+    }
+
+    res.json({ license });
+  } catch (err) {
+    console.error('Session retrieve error:', err);
+    res.status(500).json({ error: 'Failed to retrieve session' });
+  }
+});
+
+export default router;

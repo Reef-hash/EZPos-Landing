@@ -1,60 +1,71 @@
 # EZPos Web Platform
 
-EZPos is now based on a C# Blazor web frontend with a layered .NET backend foundation.
+Marketing website + license management for EZPos and CrossxPos products.
 
-## Tech Stack At A Glance
+## Structure
 
-- Language: C# (.NET 10)
-- Frontend: Blazor Web App (Server interactivity)
-- UI Components: Microsoft Fluent UI for Blazor
-- Styling: Custom CSS design tokens + Fluent surface styles
-- Client Script: Minimal JavaScript (theme/localStorage)
-- Backend Foundation: ASP.NET Core Web API (layered: Api/App/Infra/Domain)
-- Data Layer (planned foundation): EF Core + PostgreSQL provider
-- Payments (planned foundation): Stripe .NET SDK
-- Deployment: Render (Docker fallback supported)
-
-## Current Frontend
-
-The customer-facing website runs from:
-
-- src/EZPos.Web.Ui
-
-This project is a Blazor Web App using Fluent UI components.
-
-## Run Locally
-
-1. Restore and build:
-
-```bash
-dotnet restore
-dotnet build
+```
+EZPos-Web/
+  frontend/    Next.js 14 (App Router) + Tailwind CSS + Font Awesome
+  backend/     Node.js + Express REST API
 ```
 
-2. Run frontend:
+## Stack
+
+| Layer     | Technology                          |
+|-----------|-------------------------------------|
+| Frontend  | Next.js 14, TypeScript, Tailwind CSS, Font Awesome |
+| Backend   | Node.js, Express, TypeScript        |
+| Database  | Supabase (PostgreSQL)               |
+| Payments  | Stripe (Card, FPX, QR)              |
+| Deploy    | Vercel (frontend) + Railway/Render (backend) |
+
+## Features
+
+- Product landing pages for EZPos Desktop and CrossxPos
+- Side-by-side comparison page
+- Pricing page (dynamic, from DB)
+- Stripe Checkout (card, FPX, QR)
+- Auto license key generation after payment
+- License verify page
+- Admin portal: dashboard, license management, pricing management, sales history
+
+## Planning Docs
+
+- Implementation roadmap and checklist: `docs/IMPLEMENTATION-TODO.md`
+
+## Setup
+
+### 1. Backend
 
 ```bash
-dotnet run --project src/EZPos.Web.Ui/EZPos.Web.Ui.csproj
+cd backend
+cp .env.example .env
+# Fill in .env values
+npm install
+npm run dev
 ```
 
-3. Open browser:
+### 2. Frontend
 
-- https://localhost:5001 (or the URL printed in terminal)
+```bash
+cd frontend
+cp .env.local.example .env.local
+# Fill in .env.local values
+npm install
+npm run dev
+```
 
-## Key Routes
+### 3. Supabase
 
-- / -> landing page
-- /pricing -> pricing page
-- /not-found -> branded 404 route
-- /healthz -> deployment health endpoint
+Run `backend/supabase-schema.sql` in your Supabase SQL Editor.
 
-## Hosting
+### 4. Admin password hash
 
-Use the step-by-step deployment guide:
+Generate bcrypt hash for your admin password:
 
-- docs/HOSTING_BLAZOR_RENDER.md
+```bash
+node -e "const b=require('bcryptjs'); b.hash('yourpassword',10).then(console.log)"
+```
 
-## Notes
-
-- This repo now ignores future bin/ and obj/ output via .gitignore.
-- Existing committed build artifacts can be cleaned in a later maintenance commit.
+Put the hash in `ADMIN_PASSWORD_HASH` in backend `.env`.
