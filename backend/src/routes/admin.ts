@@ -119,6 +119,15 @@ router.post('/pricing', async (req: AuthRequest, res: Response) => {
     .single();
 
   if (error) { res.status(500).json({ error: 'Failed to create plan' }); return; }
+
+  if (data.is_popular) {
+    const clearError = await clearOtherPopularPlans(data.product, data.id);
+    if (clearError) {
+      res.status(500).json({ error: 'Plan created, but failed to enforce popular-plan rule' });
+      return;
+    }
+  }
+
   res.status(201).json(data);
 });
 
@@ -140,6 +149,15 @@ router.put('/pricing/:id', async (req: AuthRequest, res: Response) => {
     .single();
 
   if (error) { res.status(500).json({ error: 'Failed to update plan' }); return; }
+
+  if (data.is_popular) {
+    const clearError = await clearOtherPopularPlans(data.product, data.id);
+    if (clearError) {
+      res.status(500).json({ error: 'Plan updated, but failed to enforce popular-plan rule' });
+      return;
+    }
+  }
+
   res.json(data);
 });
 
@@ -206,5 +224,26 @@ router.get('/sales', async (_req: AuthRequest, res: Response) => {
   if (error) { res.status(500).json({ error: 'Failed to fetch sales' }); return; }
   res.json(data);
 });
+
+async function clearOtherPopularPlans(product: 'ezpos' | 'crossxpos', keepId: string): Promise<string | null> {
+  const { error } = await supabase
+    .from('pricing_plans')
+    .update({ is_popular: false })
+    .eq('product', product)
+    .eq('is_popular', true)
+    .neq('id', keepId);
+
+  if (!error) {
+    return null;
+  }
+
+  console.error('Failed to enforce single popular plan', {
+    product,
+    keepId,
+    error: error.message,
+  });
+
+  return error.message;
+}
 
 export default router;

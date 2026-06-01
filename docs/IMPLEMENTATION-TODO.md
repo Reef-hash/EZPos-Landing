@@ -63,8 +63,8 @@ Definition of done:
 
 ## Phase 3: Operational Hardening
 
-- [ ] Enforce one `Most Popular` plan per core product
-- [ ] Add webhook idempotency guard
+- [x] Enforce one `Most Popular` plan per core product
+- [x] Add webhook idempotency guard
 - [ ] Add better error telemetry/logging
 - [ ] Add admin audit trail for pricing/add-on changes
 
@@ -78,6 +78,9 @@ Definition of done:
 - [ ] Integrate license verification flow in CrossxPos
 - [ ] Define renewal/expired behavior and UX
 
+Current progress:
+- Standardized license validation contract implemented in EZPos-Web API (`valid`, `expired`, `not_found`, `revoked`, `product_mismatch`) with product-aware validation support.
+
 Definition of done:
 - Both products can validate and reflect license status consistently
 
@@ -85,7 +88,7 @@ Definition of done:
 
 - [x] Deploy frontend (Vercel)
 - [x] Deploy backend (Railway/Render)
-- [ ] Move from test Stripe keys to live keys
+- [x] Move from test Stripe keys to live keys
 - [x] Set production CORS/env values
 - [x] Run live smoke tests and rollback checklist
 
@@ -104,7 +107,7 @@ Execution rule:
 
 - [x] Add webhook idempotency guard (prevent duplicate `checkout.session.completed` processing)
 - [x] Ensure webhook failure logs include Stripe event id and error reason
-- [ ] Confirm `/api/webhook` still returns 2xx for successfully processed events
+- [x] Confirm `/api/webhook` still returns 2xx for successfully processed events
 
 Done when:
 - Duplicate deliveries of the same event do not create duplicate `sales` or `licenses` rows.
@@ -125,41 +128,41 @@ Decision note:
 
 ### Step 3 - Create live webhook endpoint
 
-- [ ] Create endpoint: `https://ezpos-landing.onrender.com/api/webhook`
-- [ ] Scope: `Your account`
-- [ ] Subscribe to event: `checkout.session.completed`
-- [ ] Copy live webhook signing secret (`whsec_...`)
+- [x] Create endpoint: `https://ezpos-landing.onrender.com/api/webhook`
+- [x] Scope: `Your account`
+- [x] Subscribe to event: `checkout.session.completed`
+- [x] Copy live webhook signing secret (`whsec_...`)
 
 Done when:
 - Stripe webhook endpoint is active in Live mode and shows no configuration error.
 
 ### Step 4 - Render production environment update
 
-- [ ] Update `STRIPE_SECRET_KEY` to live key (`sk_live_...`)
-- [ ] Update `STRIPE_WEBHOOK_SECRET` to live signing secret (`whsec_...`)
-- [ ] Confirm `FRONTEND_URL` is exact production origin (no trailing slash mismatch)
-- [ ] Redeploy backend service
+- [x] Update `STRIPE_SECRET_KEY` to live key (`sk_live_...`)
+- [x] Update `STRIPE_WEBHOOK_SECRET` to live signing secret (`whsec_...`)
+- [x] Confirm `FRONTEND_URL` is exact production origin (no trailing slash mismatch)
+- [x] Redeploy backend service
 
 Done when:
 - Backend redeploy succeeds and `/health` responds `ok`.
 
 ### Step 5 - Vercel production environment check
 
-- [ ] Confirm `NEXT_PUBLIC_API_URL` points to Render backend production URL
-- [ ] Redeploy frontend
-- [ ] Confirm pricing page loads from production API
+- [x] Confirm `NEXT_PUBLIC_API_URL` points to Render backend production URL
+- [x] Redeploy frontend
+- [x] Confirm pricing page loads from production API
 
 Done when:
 - Frontend can open checkout from production environment without CORS errors.
 
 ### Step 6 - Controlled live payment smoke test
 
-- [ ] Create temporary low-price live plan (for first real transaction)
-- [ ] Complete one real payment in live mode
-- [ ] Verify Stripe event delivery status is `Delivered (2xx)`
-- [ ] Verify 1 new row in `sales`
-- [ ] Verify 1 new row in `licenses`
-- [ ] Verify success page shows generated license key
+- [x] Create temporary low-price live plan (for first real transaction)
+- [x] Complete one real payment in live mode
+- [x] Verify Stripe event delivery status is `Delivered (2xx)`
+- [x] Verify 1 new row in `sales`
+- [x] Verify 1 new row in `licenses`
+- [x] Verify success page shows generated license key
 
 Done when:
 - End-to-end production payment and license issuance flow is proven.
@@ -169,7 +172,11 @@ Done when:
 - [ ] Disable/remove temporary low-price test plan
 - [ ] Rotate previously exposed secrets (Supabase service role, Stripe secret, webhook secret, JWT)
 - [ ] Update secrets in Render after rotation
-- [ ] Run one final regression check (admin login, pricing load, checkout open)
+- [x] Run one final regression check (admin login, pricing load, checkout open)
+
+Operator note:
+- Secret rotation is currently deferred by operator decision for this cycle.
+- Temporary low-price plan cleanup remains a required manual production action.
 
 Done when:
 - Production is clean, secure, and stable for normal customer traffic.
@@ -241,6 +248,11 @@ Safety constraints:
   - Product key validation plan captured and deferred until Stripe live setup is completed
   - Stripe Step 1 code hardening started: webhook idempotency guard and event-id error logging added
   - Stripe launch decision locked: card-first production launch, FPX deferred pending live eligibility
+  - Stripe Live activated with card-first fallback and live checkout test completed successfully
+  - Stripe Live TODO Step 1 to Step 6 verified complete (webhook 2xx, payment success, sales/license rows confirmed)
+  - Final regression check executed and passed (admin login page, pricing page, checkout flow reachability)
+  - Fixed admin pricing rule to enforce only one `Most Popular` plan per product (backend enforcement added)
+  - Phase 4 foundation started: license validation API contract standardized for multi-product clients
 
 ## 6) Risks and Mitigation
 

@@ -10,6 +10,7 @@ import api from '@/lib/api';
 
 interface VerifyResult {
   valid: boolean;
+  status?: 'valid' | 'expired' | 'not_found' | 'revoked' | 'product_mismatch';
   product: string;
   plan: string;
   expiresAt: string;
@@ -32,10 +33,27 @@ export default function LicenseVerifyPage() {
       const res = await api.get(`/api/licenses/verify/${encodeURIComponent(key.trim())}`);
       setResult(res.data);
     } catch (err: any) {
-      setResult({ valid: false, product: '', plan: '', expiresAt: '', customerName: '', expired: false, error: 'License key not found.' });
+      setResult({
+        valid: false,
+        status: 'not_found',
+        product: '',
+        plan: '',
+        expiresAt: '',
+        customerName: '',
+        expired: false,
+        error: 'License key not found.',
+      });
     } finally {
       setLoading(false);
     }
+  }
+
+  function renderStatusTitle(current: VerifyResult): string {
+    if (current.valid) return 'Valid License';
+    if (current.status === 'expired' || current.expired) return 'Expired License';
+    if (current.status === 'revoked') return 'Revoked License';
+    if (current.status === 'product_mismatch') return 'Product Mismatch';
+    return 'Invalid License';
   }
 
   return (
@@ -76,7 +94,7 @@ export default function LicenseVerifyPage() {
             />
             <div>
               <h2 className={`font-bold text-lg ${result.valid ? 'text-green-700' : 'text-red-600'}`}>
-                {result.valid ? 'Valid License' : result.expired ? 'Expired License' : 'Invalid License'}
+                {renderStatusTitle(result)}
               </h2>
               {result.error && <p className="text-red-500 text-sm">{result.error}</p>}
             </div>
