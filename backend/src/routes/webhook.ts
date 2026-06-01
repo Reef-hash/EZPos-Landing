@@ -24,20 +24,49 @@ router.post('/', express_rawBody, async (req: Request, res: Response) => {
     return;
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
 
-    if (session.payment_status === 'paid') {
-      await handleSuccessfulPayment(session);
+      if (session.payment_status === 'paid') {
+        await handleSuccessfulPayment(event.id, session);
+      }
     }
+  } catch (err) {
+    console.error('[Stripe webhook] processing failed', {
+      eventId: event.id,
+      eventType: event.type,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    res.status(500).json({ error: 'Webhook processing failed' });
+    return;
   }
 
   res.json({ received: true });
 });
 
-async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
+async function handleSuccessfulPayment(eventId: string, session: Stripe.Checkout.Session) {
   const { planId, product, customerName, planName, addonIds } = session.metadata as Record<string, string>;
   const customerEmail = session.customer_email!;
+
+  // Idempotency guard: if a sale already exists for this Stripe session, skip.
+  const { data: existingSale, error: existingSaleError } = await supabase
+    .from('sales')
+    .select('id')
+    .eq('stripe_session_id', session.id)
+    .maybeSingle();
+
+  if (existingSaleError) {
+    throw new Error(`Failed idempotency lookup: ${existingSaleError.message}`);
+  }
+
+  if (existingSale) {
+    console.log('[Stripe webhook] duplicate event ignored', {
+      eventId,
+      stripeSessionId: session.id,
+    });
+    return;
+  }
 
   const parsedAddonIds = (() => {
     try {
@@ -66,7 +95,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   // Generate license key: PRODUCT-PLAN-RANDOM
   const licenseKey = generateLicenseKey(product, planName);
 
-  await supabase.from('licenses').insert({
+  const { error: licenseInsertError } = await supabase.from('licenses').insert({
     key: licenseKey,
     product,
     plan_name: planName,
@@ -80,8 +109,12 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     is_active: true,
   });
 
+  if (licenseInsertError && !isDuplicateKeyError(licenseInsertError)) {
+    throw new Error(`License insert failed: ${licenseInsertError.message}`);
+  }
+
   // Record sale
-  await supabase.from('sales').insert({
+  const { error: saleInsertError } = await supabase.from('sales').insert({
     product,
     plan_id: planId,
     plan_name: planName,
@@ -92,6 +125,17 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     stripe_session_id: session.id,
     paid_at: new Date().toISOString(),
   });
+
+  if (saleInsertError && !isDuplicateKeyError(saleInsertError)) {
+    throw new Error(`Sale insert failed: ${saleInsertError.message}`);
+  }
+
+  if (saleInsertError || licenseInsertError) {
+    console.log('[Stripe webhook] duplicate insert safely ignored', {
+      eventId,
+      stripeSessionId: session.id,
+    });
+  }
 }
 
 function generateLicenseKey(product: string, plan: string): string {
@@ -110,6 +154,10 @@ function express_rawBody(req: any, _res: any, next: any) {
     req.rawBody = data;
     next();
   });
+}
+
+function isDuplicateKeyError(error: { code?: string; message?: string }): boolean {
+  return error.code === '23505' || /duplicate key/i.test(error.message ?? '');
 }
 
 export default router;

@@ -2,8 +2,15 @@ import { Router, Request, Response } from 'express';
 import { stripe } from '../lib/stripe';
 import { supabase } from '../lib/supabase';
 import { z } from 'zod';
+import Stripe from 'stripe';
 
 const router = Router();
+
+const ALLOWED_PAYMENT_METHOD_TYPES: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = [
+  'card',
+  'fpx',
+  'grabpay',
+];
 
 const checkoutSchema = z.object({
   planId: z.string().uuid(),
@@ -84,8 +91,9 @@ router.post('/checkout', async (req: Request, res: Response) => {
       })),
     ];
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'fpx'],
+    const primaryPaymentMethods = getPaymentMethodTypes();
+
+    const basePayload: Stripe.Checkout.SessionCreateParams = {
       customer_email: customerEmail,
       line_items: lineItems,
       mode: 'payment',
@@ -98,11 +106,31 @@ router.post('/checkout', async (req: Request, res: Response) => {
       },
       success_url: `${process.env.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/pricing`,
-    });
+    };
+
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        ...basePayload,
+        payment_method_types: primaryPaymentMethods,
+      });
+    } catch (err) {
+      if (shouldFallbackToCardOnly(err, primaryPaymentMethods)) {
+        console.warn('Stripe payment method fallback activated: retrying with card only');
+        session = await stripe.checkout.sessions.create({
+          ...basePayload,
+          payment_method_types: ['card'],
+        });
+      } else {
+        throw err;
+      }
+    }
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error('Stripe error:', err);
+    console.error('Stripe error creating checkout session:', {
+      message: err instanceof Error ? err.message : String(err),
+    });
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
@@ -139,3 +167,35 @@ router.get('/session/:sessionId', async (req: Request, res: Response) => {
 });
 
 export default router;
+
+function getPaymentMethodTypes(): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  const configured = (process.env.STRIPE_PAYMENT_METHOD_TYPES ?? 'card')
+    .split(',')
+    .map((method) => method.trim().toLowerCase())
+    .filter((method): method is Stripe.Checkout.SessionCreateParams.PaymentMethodType =>
+      ALLOWED_PAYMENT_METHOD_TYPES.includes(method as Stripe.Checkout.SessionCreateParams.PaymentMethodType)
+    );
+
+  if (configured.length === 0) {
+    return ['card'];
+  }
+
+  // Ensure deterministic order and avoid duplicates.
+  return Array.from(new Set(configured));
+}
+
+function shouldFallbackToCardOnly(
+  err: unknown,
+  requestedMethods: Stripe.Checkout.SessionCreateParams.PaymentMethodType[]
+): boolean {
+  if (!requestedMethods.includes('fpx')) {
+    return false;
+  }
+
+  if (!(err instanceof Stripe.errors.StripeError)) {
+    return false;
+  }
+
+  const message = (err.message ?? '').toLowerCase();
+  return message.includes('fpx') || message.includes('payment_method_types');
+}

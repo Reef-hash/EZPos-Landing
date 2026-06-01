@@ -10,8 +10,9 @@ Purpose: centralized roadmap so implementation can continue phase-by-phase witho
 - Public pricing fallback implemented in frontend (core plans still visible if API unavailable)
 - Add-ons are optional and do not block checkout UI
 - Known setup state:
-  - Supabase setup progress: `Phase 1` completed until `Step 3`
-  - Current focus: `Phase 1, Step 4` (backend `.env` completion + API health check)
+  - Supabase, backend env, frontend env, and deploy pipeline configured
+  - Stripe test checkout + webhook smoke test completed successfully
+  - Current focus: final production-readiness hardening before full go-live
 
 ## 2) Target Architecture
 
@@ -40,10 +41,10 @@ flowchart LR
 - [x] Step 1: Create Supabase project
 - [x] Step 2: Run schema SQL (`backend/supabase-schema.sql`)
 - [x] Step 3: Collect Supabase credentials (URL, service role, anon)
-- [ ] Step 4: Configure backend `.env` with valid URL/key, admin hash, JWT secret
-- [ ] Step 5: Start backend and verify health endpoint (`/health`)
-- [ ] Step 6: Configure frontend `.env.local` to point to backend
-- [ ] Step 7: Start frontend and validate pricing/admin pages
+- [x] Step 4: Configure backend `.env` with valid URL/key, admin hash, JWT secret
+- [x] Step 5: Start backend and verify health endpoint (`/health`)
+- [x] Step 6: Configure frontend `.env.local` to point to backend
+- [x] Step 7: Start frontend and validate pricing/admin pages
 
 Definition of done:
 - Backend responds `200` on `/health`
@@ -51,10 +52,10 @@ Definition of done:
 
 ## Phase 2: Commercial and Payment Readiness
 
-- [ ] Stripe test keys configured in backend/frontend env
-- [ ] Stripe webhook local test (`checkout.session.completed`) verified
-- [ ] License generation verified after successful payment
-- [ ] Sales row and license row created correctly in DB
+- [x] Stripe test keys configured in backend/frontend env
+- [x] Stripe webhook local test (`checkout.session.completed`) verified
+- [x] License generation verified after successful payment
+- [x] Sales row and license row created correctly in DB
 - [ ] Admin manual operations validated (pricing update, add-on CRUD)
 
 Definition of done:
@@ -82,14 +83,96 @@ Definition of done:
 
 ## Phase 5: Deployment and Go-Live
 
-- [ ] Deploy frontend (Vercel)
-- [ ] Deploy backend (Railway/Render)
+- [x] Deploy frontend (Vercel)
+- [x] Deploy backend (Railway/Render)
 - [ ] Move from test Stripe keys to live keys
-- [ ] Set production CORS/env values
-- [ ] Run live smoke tests and rollback checklist
+- [x] Set production CORS/env values
+- [x] Run live smoke tests and rollback checklist
 
 Definition of done:
 - Production checkout and license delivery fully operational
+
+## 3.1) Stripe Live Launch TODO (Execute One-by-One)
+
+Goal:
+- Move payment flow from Stripe test mode to Stripe live mode safely.
+
+Execution rule:
+- Complete each step in order. Do not skip to the next step until current step is verified.
+
+### Step 1 - Pre-flight backend safeguards
+
+- [x] Add webhook idempotency guard (prevent duplicate `checkout.session.completed` processing)
+- [x] Ensure webhook failure logs include Stripe event id and error reason
+- [ ] Confirm `/api/webhook` still returns 2xx for successfully processed events
+
+Done when:
+- Duplicate deliveries of the same event do not create duplicate `sales` or `licenses` rows.
+
+### Step 2 - Stripe live account readiness
+
+- [x] Switch Stripe Dashboard to Live mode
+- [x] Complete business profile and payout setup
+- [x] Enable required payment methods for production (Card first; FPX deferred pending Stripe live eligibility)
+
+Done when:
+- Live API keys are visible and account is allowed to accept live payments.
+
+Decision note:
+- Launch payment with Stripe Card first.
+- FPX in Stripe Live is deferred until account eligibility/verification enables FPX.
+- Alternative FPX gateway exploration (for example ToyyibPay) is postponed until core live checkout is stable.
+
+### Step 3 - Create live webhook endpoint
+
+- [ ] Create endpoint: `https://ezpos-landing.onrender.com/api/webhook`
+- [ ] Scope: `Your account`
+- [ ] Subscribe to event: `checkout.session.completed`
+- [ ] Copy live webhook signing secret (`whsec_...`)
+
+Done when:
+- Stripe webhook endpoint is active in Live mode and shows no configuration error.
+
+### Step 4 - Render production environment update
+
+- [ ] Update `STRIPE_SECRET_KEY` to live key (`sk_live_...`)
+- [ ] Update `STRIPE_WEBHOOK_SECRET` to live signing secret (`whsec_...`)
+- [ ] Confirm `FRONTEND_URL` is exact production origin (no trailing slash mismatch)
+- [ ] Redeploy backend service
+
+Done when:
+- Backend redeploy succeeds and `/health` responds `ok`.
+
+### Step 5 - Vercel production environment check
+
+- [ ] Confirm `NEXT_PUBLIC_API_URL` points to Render backend production URL
+- [ ] Redeploy frontend
+- [ ] Confirm pricing page loads from production API
+
+Done when:
+- Frontend can open checkout from production environment without CORS errors.
+
+### Step 6 - Controlled live payment smoke test
+
+- [ ] Create temporary low-price live plan (for first real transaction)
+- [ ] Complete one real payment in live mode
+- [ ] Verify Stripe event delivery status is `Delivered (2xx)`
+- [ ] Verify 1 new row in `sales`
+- [ ] Verify 1 new row in `licenses`
+- [ ] Verify success page shows generated license key
+
+Done when:
+- End-to-end production payment and license issuance flow is proven.
+
+### Step 7 - Post-verification cleanup
+
+- [ ] Disable/remove temporary low-price test plan
+- [ ] Rotate previously exposed secrets (Supabase service role, Stripe secret, webhook secret, JWT)
+- [ ] Update secrets in Render after rotation
+- [ ] Run one final regression check (admin login, pricing load, checkout open)
+
+Done when:
+- Production is clean, secure, and stable for normal customer traffic.
 
 ## 4) Resume-Work Quick Start
 
@@ -100,6 +183,49 @@ When resuming work in a new session:
 3. Execute only the next unchecked step.
 4. Mark step done and add short note in `Progress Log`.
 
+## 4.1) Deferred Plan: Product Key Validation (After Live Stripe Setup)
+
+Execution rule:
+- Run this section only after Stripe live keys and live webhook are fully configured and verified in production.
+
+Validation contract (shared by both products):
+- Endpoint response states: `valid`, `expired`, `not_found`, `revoked`, `product_mismatch`
+- Enforce product binding: EZPos Desktop keys are rejected by CrossxPos, and vice versa
+- Do not expose service-role secrets in client apps; validation must go through backend API
+
+Test matrix (execute for EZPos Desktop and CrossxPos):
+- Valid key for correct product
+- Valid key for wrong product
+- Expired key
+- Revoked key
+- Unknown key
+- Malformed key format
+- Network timeout/offline fallback behavior
+
+Per-product integration checks:
+- EZPos Desktop: validate on startup, manual re-check, temporary cache behavior
+- CrossxPos: validate in onboarding/login path and periodic revalidation behavior
+- User messaging: show actionable reason for rejection and recovery path
+
+Operational safeguards:
+- Add rate limiting on validation endpoint
+- Add audit logs for validation attempts and outcomes
+- Define renewal/extension handling and expected state transition
+
+## 4.2) Deferred Plan: Alternative FPX Gateway (Post Go-Live)
+
+Execution rule:
+- Start only after Stripe live card checkout is stable in production.
+
+Scope:
+- Evaluate separate FPX gateway integration path (for example ToyyibPay) as a second payment rail.
+- Keep Stripe and non-Stripe flows isolated, with a shared payment-finalization service for license issuance.
+
+Safety constraints:
+- Webhook/callback idempotency must prevent duplicate `sales` and `licenses` rows across gateways.
+- Each provider callback must be signature-verified before finalization.
+- Unified audit logging required for gateway source, transaction id, and finalization outcome.
+
 ## 5) Progress Log
 
 - 2026-05-29:
@@ -107,6 +233,14 @@ When resuming work in a new session:
   - Pricing fallback implemented
   - Add-on optional behavior stabilized
   - Supabase steps 1-3 completed
+- 2026-06-01:
+  - Backend deployed on Render and frontend deployed on Vercel
+  - CORS production origin fixed and validated
+  - Stripe test webhook wired with `checkout.session.completed`
+  - End-to-end smoke test successful (checkout -> webhook -> license generated)
+  - Product key validation plan captured and deferred until Stripe live setup is completed
+  - Stripe Step 1 code hardening started: webhook idempotency guard and event-id error logging added
+  - Stripe launch decision locked: card-first production launch, FPX deferred pending live eligibility
 
 ## 6) Risks and Mitigation
 
