@@ -5,6 +5,7 @@ const router = Router();
 
 type ProductType = 'ezpos' | 'crossxpos';
 type ValidationStatus = 'valid' | 'expired' | 'not_found' | 'revoked' | 'product_mismatch';
+type ValidationDecision = 'allow' | 'deny' | 'allow_temporarily';
 
 function isProductType(value: string): value is ProductType {
   return value === 'ezpos' || value === 'crossxpos';
@@ -18,24 +19,62 @@ function buildValidationResult(status: ValidationStatus, details?: {
   expectedProduct?: ProductType;
 }): {
   valid: boolean;
+  decision: ValidationDecision;
   status: ValidationStatus;
+  reason_code: string;
+  client_action: string;
   product?: ProductType;
   plan?: string;
   expiresAt?: string;
   customerName?: string;
   expired: boolean;
   expectedProduct?: ProductType;
+  policy: {
+    graceDays: number;
+    revalidateAfterHours: number;
+  };
   error?: string;
 } {
+  const decisionByStatus: Record<ValidationStatus, ValidationDecision> = {
+    valid: 'allow',
+    expired: 'deny',
+    not_found: 'deny',
+    revoked: 'deny',
+    product_mismatch: 'deny',
+  };
+
+  const reasonCodeByStatus: Record<ValidationStatus, string> = {
+    valid: 'VALID',
+    expired: 'ENTITLEMENT_EXPIRED',
+    not_found: 'LICENSE_NOT_FOUND',
+    revoked: 'ENTITLEMENT_REVOKED',
+    product_mismatch: 'PRODUCT_MISMATCH',
+  };
+
+  const clientActionByStatus: Record<ValidationStatus, string> = {
+    valid: 'continue',
+    expired: 'renew_subscription',
+    not_found: 'check_key_or_contact_support',
+    revoked: 'contact_support',
+    product_mismatch: 'use_correct_product_license',
+  };
+
   const base = {
     valid: status === 'valid',
+    decision: decisionByStatus[status],
     status,
+    reason_code: reasonCodeByStatus[status],
+    client_action: clientActionByStatus[status],
     product: details?.product,
     plan: details?.planName,
     expiresAt: details?.expiresAt,
     customerName: details?.customerName,
     expired: status === 'expired',
     expectedProduct: details?.expectedProduct,
+    policy: {
+      graceDays: details?.product === 'crossxpos' ? 3 : 7,
+      revalidateAfterHours: details?.product === 'crossxpos' ? 12 : 24,
+    },
   };
 
   if (status === 'valid') {
@@ -127,6 +166,66 @@ router.get('/verify/:key', async (req: Request, res: Response) => {
 // Alias route for future product integration clients.
 router.get('/validate/:key', async (req: Request, res: Response) => {
   await handleLicenseValidation(req.params.key, req.query.product?.toString(), res);
+});
+
+// Legacy compatibility endpoint for EZPos desktop client.
+// Accepts POST /api/licenses/validate { LicenseKey, DeviceId }
+router.post('/validate', async (req: Request, res: Response) => {
+  const payload = req.body ?? {};
+  const key = payload.LicenseKey ?? payload.licenseKey ?? payload.key;
+  const requestedProduct = payload.Product ?? payload.product ?? 'ezpos';
+
+  if (typeof key !== 'string' || !key.trim()) {
+    res.status(400).json({
+      IsValid: false,
+      IsOffline: false,
+      Message: 'License key is required.',
+      Decision: 'deny',
+      Status: 'not_found',
+      ReasonCode: 'LICENSE_KEY_REQUIRED',
+      ClientAction: 'provide_license_key',
+    });
+    return;
+  }
+
+  let resultPayload: Record<string, unknown> | null = null;
+  const proxyResponse = {
+    status: (_code: number) => proxyResponse,
+    json: (payloadToCapture: Record<string, unknown>) => {
+      resultPayload = payloadToCapture;
+      return proxyResponse;
+    },
+  } as unknown as Response;
+
+  await handleLicenseValidation(key.trim(), String(requestedProduct), proxyResponse);
+
+  const result = resultPayload as ReturnType<typeof buildValidationResult> | null;
+  if (!result) {
+    res.status(500).json({
+      IsValid: false,
+      IsOffline: false,
+      Message: 'Validation failed.',
+      Decision: 'deny',
+      Status: 'not_found',
+      ReasonCode: 'VALIDATION_INTERNAL_ERROR',
+      ClientAction: 'retry_later',
+    });
+    return;
+  }
+
+  res.json({
+    IsValid: result.valid,
+    IsOffline: false,
+    Message: result.error ?? 'License is valid.',
+    Decision: result.decision,
+    Status: result.status,
+    ReasonCode: result.reason_code,
+    ClientAction: result.client_action,
+    Product: result.product,
+    Plan: result.plan,
+    ExpiresAt: result.expiresAt,
+    Policy: result.policy,
+  });
 });
 
 export default router;

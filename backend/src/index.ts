@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 
 import authRoutes from './routes/auth';
 import licenseRoutes from './routes/licenses';
+import licensingV1Routes from './routes/licensingV1';
 import pricingRoutes from './routes/pricing';
 import addonRoutes from './routes/addons';
 import paymentRoutes from './routes/payments';
@@ -44,6 +45,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/licenses', licenseRoutes);
+app.use('/api/v1/licensing', licensingV1Routes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/addons', addonRoutes);
 app.use('/api/payments', paymentRoutes);
