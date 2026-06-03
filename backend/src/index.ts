@@ -11,6 +11,8 @@ import pricingRoutes from './routes/pricing';
 import addonRoutes from './routes/addons';
 import paymentRoutes from './routes/payments';
 import adminRoutes from './routes/admin';
+import adminV1Routes from './routes/adminV1';
+import portalRoutes from './routes/portal';
 import webhookRoutes from './routes/webhook';
 
 dotenv.config();
@@ -50,6 +52,8 @@ app.use('/api/pricing', pricingRoutes);
 app.use('/api/addons', addonRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/v1', adminV1Routes);
+app.use('/api/portal', portalRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {
