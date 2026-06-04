@@ -153,6 +153,48 @@ function buildValidationResult(status: ValidationStatus, details?: {
 }
 
 async function validateLicenseKey(licenseKey: string, expectedProduct?: ProductType) {
+  // ── V1 path: check license_credentials → entitlements ─────────────────
+  const { data: cred, error: credError } = await supabase
+    .from('license_credentials')
+    .select(`
+      license_key, status,
+      entitlements (
+        id, status, expires_at,
+        customers ( name ),
+        plans ( name, products ( code ) )
+      )
+    `)
+    .eq('license_key', licenseKey)
+    .maybeSingle();
+
+  if (!credError && cred) {
+    const ent = (cred as any).entitlements;
+    const product = ent?.plans?.products?.code as ProductType | undefined;
+    const planName = ent?.plans?.name as string | undefined;
+    const expiresAt = ent?.expires_at as string | undefined;
+    const customerName = ent?.customers?.name as string | undefined;
+
+    if (cred.status === 'revoked' || ent?.status === 'revoked') {
+      return buildValidationResult('revoked', { product, planName, expiresAt, customerName, expectedProduct });
+    }
+
+    if (expectedProduct && product && product !== expectedProduct) {
+      return buildValidationResult('product_mismatch', { product, planName, expiresAt, customerName, expectedProduct });
+    }
+
+    const expired = expiresAt ? new Date(expiresAt) < new Date() : false;
+    if (expired || ent?.status === 'expired') {
+      return buildValidationResult('expired', { product, planName, expiresAt, customerName, expectedProduct });
+    }
+
+    if (ent?.status === 'suspended') {
+      return buildValidationResult('revoked', { product, planName, expiresAt, customerName, expectedProduct });
+    }
+
+    return buildValidationResult('valid', { product, planName, expiresAt, customerName, expectedProduct });
+  }
+
+  // ── Legacy fallback: check licenses table ──────────────────────────────
   const { data, error } = await supabase
     .from('licenses')
     .select('key, product, plan_name, expires_at, is_active, customer_name')
