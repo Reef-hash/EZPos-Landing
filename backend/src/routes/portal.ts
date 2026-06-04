@@ -85,28 +85,40 @@ router.get('/me', requirePortalAuth, async (req: PortalRequest, res: Response) =
       id, status, expires_at, starts_at,
       plans ( code, name, products ( code, name ) ),
       license_credentials ( license_key, status, issued_at ),
-      activations ( id, device_id, status, last_validated_at )
+      activations ( id, device_id, status, last_validated_at ),
+      subscriptions ( id, provider, status, current_period_start, current_period_end, canceled_at )
     `)
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
 
   if (error) { res.status(500).json({ error: 'Failed to load entitlements' }); return; }
 
-  const result = (data ?? []).map((ent: any) => ({
-    entitlement_id: ent.id,
-    entitlement_status: ent.status,
-    expires_at: ent.expires_at,
-    starts_at: ent.starts_at,
-    product: ent.plans?.products?.code,
-    product_name: ent.plans?.products?.name,
-    plan_code: ent.plans?.code,
-    plan_name: ent.plans?.name,
-    license_key: ent.license_credentials?.[0]?.license_key ?? null,
-    credential_status: ent.license_credentials?.[0]?.status ?? null,
-    issued_at: ent.license_credentials?.[0]?.issued_at ?? null,
-    active_activations: (ent.activations ?? []).filter((a: any) => a.status === 'active').length,
-    total_activations: (ent.activations ?? []).length,
-  }));
+  const result = (data ?? []).map((ent: any) => {
+    const activeSub = (ent.subscriptions ?? []).find((s: any) => s.status !== 'canceled') ?? null;
+    return {
+      entitlement_id: ent.id,
+      entitlement_status: ent.status,
+      expires_at: ent.expires_at,
+      starts_at: ent.starts_at,
+      product: ent.plans?.products?.code,
+      product_name: ent.plans?.products?.name,
+      plan_code: ent.plans?.code,
+      plan_name: ent.plans?.name,
+      license_key: ent.license_credentials?.[0]?.license_key ?? null,
+      credential_status: ent.license_credentials?.[0]?.status ?? null,
+      issued_at: ent.license_credentials?.[0]?.issued_at ?? null,
+      active_activations: (ent.activations ?? []).filter((a: any) => a.status === 'active').length,
+      total_activations: (ent.activations ?? []).length,
+      subscription: activeSub ? {
+        id: activeSub.id,
+        provider: activeSub.provider,
+        status: activeSub.status,
+        current_period_start: activeSub.current_period_start,
+        current_period_end: activeSub.current_period_end,
+        canceled_at: activeSub.canceled_at,
+      } : null,
+    };
+  });
 
   res.json({ customer: req.customer, entitlements: result });
 });
@@ -123,7 +135,8 @@ router.get('/license/:key', requirePortalAuth, async (req: PortalRequest, res: R
       entitlements (
         id, status, expires_at, starts_at, customer_id,
         plans ( code, name, products ( code, name ) ),
-        activations ( id, device_id, status, first_activated_at, last_validated_at )
+        activations ( id, device_id, status, first_activated_at, last_validated_at ),
+        subscriptions ( id, provider, status, current_period_start, current_period_end, canceled_at )
       )
     `)
     .eq('license_key', key)
@@ -153,6 +166,17 @@ router.get('/license/:key', requirePortalAuth, async (req: PortalRequest, res: R
       plan_code: ent.plans?.code,
       plan_name: ent.plans?.name,
     },
+    subscription: (() => {
+      const activeSub = (ent.subscriptions ?? []).find((s: any) => s.status !== 'canceled') ?? null;
+      return activeSub ? {
+        id: activeSub.id,
+        provider: activeSub.provider,
+        status: activeSub.status,
+        current_period_start: activeSub.current_period_start,
+        current_period_end: activeSub.current_period_end,
+        canceled_at: activeSub.canceled_at,
+      } : null;
+    })(),
     activations: (ent.activations ?? []).map((a: any) => ({
       id: a.id,
       device_id: a.device_id,

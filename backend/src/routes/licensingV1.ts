@@ -35,6 +35,24 @@ const activateSchema = z.object({
   installationId: z.string().min(1).optional(),
 });
 
+const deactivateSchema = z.object({
+  licenseKey: z.string().min(1),
+  deviceId: z.string().min(1),
+});
+
+const transferRequestSchema = z.object({
+  licenseKey: z.string().min(1),
+  fromDeviceId: z.string().min(1),
+  toDeviceId: z.string().min(1).optional(),
+  requestedBy: z.string().optional(),
+});
+
+const transferConfirmSchema = z.object({
+  transferRequestId: z.string().uuid(),
+  toDeviceId: z.string().min(1),
+  confirmedBy: z.string().optional(),
+});
+
 type ValidationResult = ReturnType<typeof buildValidationResult>;
 
 type PersistenceOutcome = {
@@ -479,5 +497,271 @@ router.post('/activate', async (req: Request, res: Response) => {
     },
   });
 });
+
+// POST /api/v1/licensing/deactivate
+router.post('/deactivate', async (req: Request, res: Response) => {
+  const parsed = deactivateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request', errors: parsed.error.flatten() });
+    return;
+  }
+
+  const { licenseKey, deviceId } = parsed.data;
+  const entitlementId = await resolveEntitlementIdByLicenseKey(licenseKey.trim());
+  if (!entitlementId) {
+    res.status(404).json({ error: 'License key not found or not linked to an entitlement' });
+    return;
+  }
+
+  const { error: releaseError } = await supabase
+    .from('activations')
+    .update({ status: 'released', updated_at: new Date().toISOString() })
+    .eq('entitlement_id', entitlementId)
+    .eq('device_id', deviceId)
+    .eq('status', 'active');
+
+  if (releaseError) {
+    console.error('[licensing-v1] deactivate failed', releaseError);
+    res.status(500).json({ error: 'Deactivation failed' });
+    return;
+  }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'system',
+    actor_id: deviceId,
+    action: 'deactivated',
+    entity_type: 'activation',
+    entity_id: entitlementId,
+    payload_json: { device_id: deviceId, license_key: licenseKey },
+  });
+
+  res.json({
+    success: true,
+    message: 'Device deactivated successfully.',
+    deviceId,
+    deactivatedAt: new Date().toISOString(),
+  });
+});
+
+// POST /api/v1/licensing/transfers/request
+router.post('/transfers/request', async (req: Request, res: Response) => {
+  const parsed = transferRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request', errors: parsed.error.flatten() });
+    return;
+  }
+
+  const { licenseKey, fromDeviceId, toDeviceId, requestedBy } = parsed.data;
+  const entitlementId = await resolveEntitlementIdByLicenseKey(licenseKey.trim());
+  if (!entitlementId) {
+    res.status(404).json({ error: 'License key not found or not linked to an entitlement' });
+    return;
+  }
+
+  // Find the current activation for this device
+  const { data: fromActivation } = await supabase
+    .from('activations')
+    .select('id')
+    .eq('entitlement_id', entitlementId)
+    .eq('device_id', fromDeviceId)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  // Determine transfer mode from policy
+  const policy = await getProductPolicyFromDb(entitlementId);
+  const transferMode = policy?.transfer_mode ?? 'admin_mediated';
+
+  const { data: transferRequest, error: insertError } = await supabase
+    .from('transfer_requests')
+    .insert({
+      entitlement_id: entitlementId,
+      from_activation_id: fromActivation?.id ?? null,
+      to_device_id: toDeviceId ?? null,
+      status: 'requested',
+      requested_by: requestedBy ?? fromDeviceId,
+      reason: 'device_transfer',
+    })
+    .select('id, status')
+    .single();
+
+  if (insertError || !transferRequest) {
+    console.error('[licensing-v1] transfer request failed', insertError);
+    res.status(500).json({ error: 'Failed to create transfer request' });
+    return;
+  }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'customer',
+    actor_id: requestedBy ?? fromDeviceId,
+    action: 'transfer_requested',
+    entity_type: 'transfer_request',
+    entity_id: transferRequest.id,
+    payload_json: { entitlement_id: entitlementId, from_device: fromDeviceId, to_device: toDeviceId ?? null },
+  });
+
+  res.json({
+    transferRequestId: transferRequest.id,
+    status: transferRequest.status,
+    transferMode,
+    message: transferMode === 'self_service'
+      ? 'Transfer request created. Confirm with POST /transfers/confirm.'
+      : 'Transfer request submitted. Admin review required.',
+  });
+});
+
+// POST /api/v1/licensing/transfers/confirm
+router.post('/transfers/confirm', async (req: Request, res: Response) => {
+  const parsed = transferConfirmSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request', errors: parsed.error.flatten() });
+    return;
+  }
+
+  const { transferRequestId, toDeviceId, confirmedBy } = parsed.data;
+
+  const { data: transferReq, error: fetchError } = await supabase
+    .from('transfer_requests')
+    .select('id, entitlement_id, from_activation_id, status')
+    .eq('id', transferRequestId)
+    .single();
+
+  if (fetchError || !transferReq) {
+    res.status(404).json({ error: 'Transfer request not found' });
+    return;
+  }
+
+  if (transferReq.status !== 'requested') {
+    res.status(409).json({
+      error: 'Transfer request is not in a confirmable state',
+      currentStatus: transferReq.status,
+    });
+    return;
+  }
+
+  // Release old activation
+  if (transferReq.from_activation_id) {
+    await supabase
+      .from('activations')
+      .update({ status: 'released', updated_at: new Date().toISOString() })
+      .eq('id', transferReq.from_activation_id);
+  }
+
+  // Upsert new activation for target device
+  const now = new Date().toISOString();
+  const { error: activationError } = await supabase
+    .from('activations')
+    .upsert(
+      {
+        entitlement_id: transferReq.entitlement_id,
+        device_id: toDeviceId,
+        status: 'active',
+        first_activated_at: now,
+        last_validated_at: now,
+      },
+      { onConflict: 'entitlement_id,device_id' }
+    );
+
+  if (activationError) {
+    console.error('[licensing-v1] transfer confirm activation upsert failed', activationError);
+    res.status(500).json({ error: 'Failed to activate new device' });
+    return;
+  }
+
+  // Mark transfer as completed
+  await supabase
+    .from('transfer_requests')
+    .update({
+      status: 'completed',
+      to_device_id: toDeviceId,
+      reviewed_by: confirmedBy ?? 'system',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', transferRequestId);
+
+  await supabase.from('audit_events').insert({
+    actor_type: confirmedBy ? 'admin' : 'system',
+    actor_id: confirmedBy ?? 'system',
+    action: 'transfer_confirmed',
+    entity_type: 'transfer_request',
+    entity_id: transferRequestId,
+    payload_json: {
+      entitlement_id: transferReq.entitlement_id,
+      to_device: toDeviceId,
+      released_activation_id: transferReq.from_activation_id ?? null,
+    },
+  });
+
+  res.json({
+    success: true,
+    transferRequestId,
+    newDeviceId: toDeviceId,
+    activatedAt: now,
+    message: 'Transfer completed. New device is now active.',
+  });
+});
+
+// GET /api/v1/licensing/entitlements/:id
+router.get('/entitlements/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const licenseKey = req.query.licenseKey as string | undefined;
+
+  if (!id.match(/^[0-9a-f-]{36}$/i)) {
+    res.status(400).json({ error: 'Invalid entitlement ID format' });
+    return;
+  }
+
+  const { data: entitlement, error } = await supabase
+    .from('entitlements')
+    .select(`
+      id, status, starts_at, expires_at, created_at, updated_at,
+      customers(id, name, email),
+      products(id, code, name),
+      plans(id, code, name, billing_model),
+      activations(id, device_id, installation_id, status, first_activated_at, last_validated_at),
+      subscriptions(id, provider, provider_subscription_id, status, current_period_start, current_period_end),
+      license_credentials(id, license_key, status, issued_at, revoked_at)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error || !entitlement) {
+    res.status(404).json({ error: 'Entitlement not found' });
+    return;
+  }
+
+  // If licenseKey provided, verify it belongs to this entitlement
+  if (licenseKey) {
+    const creds = entitlement.license_credentials as Array<{ license_key: string }> | null;
+    const match = creds?.some(c => c.license_key === licenseKey.trim());
+    if (!match) {
+      res.status(403).json({ error: 'License key does not match this entitlement' });
+      return;
+    }
+  }
+
+  res.json(entitlement);
+});
+
+// ─── Helper: policy lookup from DB ────────────────────────────────────────
+
+async function getProductPolicyFromDb(
+  entitlementId: string
+): Promise<{ transfer_mode: string } | null> {
+  const { data } = await supabase
+    .from('entitlements')
+    .select('product_id')
+    .eq('id', entitlementId)
+    .maybeSingle();
+
+  if (!data?.product_id) return null;
+
+  const { data: profile } = await supabase
+    .from('product_policy_profiles')
+    .select('transfer_mode')
+    .eq('product_id', data.product_id)
+    .maybeSingle();
+
+  return profile ?? null;
+}
 
 export default router;

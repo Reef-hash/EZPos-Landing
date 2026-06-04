@@ -38,6 +38,15 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Tighter rate limit for licensing endpoints (validate/activate are sensitive)
+const licensingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many licensing requests. Please slow down and retry.' },
+});
+
 // Stripe webhooks need raw body — must be before express.json()
 app.use('/api/webhook', webhookRoutes);
 
@@ -47,7 +56,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/licenses', licenseRoutes);
-app.use('/api/v1/licensing', licensingV1Routes);
+app.use('/api/v1/licensing', licensingLimiter, licensingV1Routes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/addons', addonRoutes);
 app.use('/api/payments', paymentRoutes);

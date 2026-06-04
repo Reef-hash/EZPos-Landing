@@ -65,8 +65,8 @@ Definition of done:
 
 - [x] Enforce one `Most Popular` plan per core product
 - [x] Add webhook idempotency guard
+- [x] Add admin audit trail for pricing/add-on changes
 - [ ] Add better error telemetry/logging
-- [ ] Add admin audit trail for pricing/add-on changes
 
 Definition of done:
 - Repeated webhooks do not duplicate data

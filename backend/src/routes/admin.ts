@@ -128,6 +128,15 @@ router.post('/pricing', async (req: AuthRequest, res: Response) => {
     }
   }
 
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'pricing_plan.create',
+    entity_type: 'pricing_plan',
+    entity_id: data.id,
+    payload_json: { product: data.product, name: data.name, price_myr: data.price_myr },
+  });
+
   res.status(201).json(data);
 });
 
@@ -158,6 +167,15 @@ router.put('/pricing/:id', async (req: AuthRequest, res: Response) => {
     }
   }
 
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'pricing_plan.update',
+    entity_type: 'pricing_plan',
+    entity_id: data.id,
+    payload_json: { changes: parsed.data },
+  });
+
   res.json(data);
 });
 
@@ -165,6 +183,16 @@ router.delete('/pricing/:id', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { error } = await supabase.from('pricing_plans').delete().eq('id', id);
   if (error) { res.status(500).json({ error: 'Failed to delete plan' }); return; }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'pricing_plan.delete',
+    entity_type: 'pricing_plan',
+    entity_id: id,
+    payload_json: {},
+  });
+
   res.json({ success: true });
 });
 
@@ -194,6 +222,16 @@ router.post('/addons', async (req: AuthRequest, res: Response) => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
   const { data, error } = await supabase.from('addons').insert(parsed.data).select().single();
   if (error) { res.status(500).json({ error: 'Failed to create add-on' }); return; }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'addon.create',
+    entity_type: 'addon',
+    entity_id: data.id,
+    payload_json: { name: data.name, product: data.product, price_myr: data.price_myr },
+  });
+
   res.status(201).json(data);
 });
 
@@ -203,6 +241,16 @@ router.put('/addons/:id', async (req: AuthRequest, res: Response) => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
   const { data, error } = await supabase.from('addons').update(parsed.data).eq('id', id).select().single();
   if (error) { res.status(500).json({ error: 'Failed to update add-on' }); return; }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'addon.update',
+    entity_type: 'addon',
+    entity_id: data.id,
+    payload_json: { changes: parsed.data },
+  });
+
   res.json(data);
 });
 
@@ -210,6 +258,16 @@ router.delete('/addons/:id', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { error } = await supabase.from('addons').delete().eq('id', id);
   if (error) { res.status(500).json({ error: 'Failed to delete add-on' }); return; }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'addon.delete',
+    entity_type: 'addon',
+    entity_id: id,
+    payload_json: {},
+  });
+
   res.json({ success: true });
 });
 
