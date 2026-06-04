@@ -2,6 +2,9 @@ import { Router, Response } from 'express';
 import { supabase } from '../lib/supabase';
 import { requireAdmin, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import crypto from 'crypto';
+
+type KeyType = 'production' | 'manual' | 'demo' | 'internal';
 
 const router = Router();
 router.use(requireAdmin);
@@ -13,7 +16,7 @@ router.get('/licenses', async (_req: AuthRequest, res: Response) => {
   const { data, error } = await supabase
     .from('license_credentials')
     .select(`
-      id, license_key, status, issued_at, created_at,
+      id, license_key, status, key_type, issued_at, created_at,
       entitlements (
         id, status, expires_at,
         customers ( name, email ),
@@ -32,6 +35,7 @@ router.get('/licenses', async (_req: AuthRequest, res: Response) => {
       id: row.id,
       license_key: row.license_key,
       credential_status: row.status,
+      key_type: (row.key_type ?? 'production') as KeyType,
       entitlement_id: ent?.id,
       entitlement_status: ent?.status,
       expires_at: ent?.expires_at,
@@ -194,6 +198,197 @@ router.post('/entitlements/:id/reinstate', async (req: AuthRequest, res: Respons
   });
 
   res.json({ success: true });
+});
+
+// ─── KEY GENERATION ──────────────────────────────────────────────────────────
+
+// GET /api/admin/v1/plans — products with their plans (for key generation form)
+router.get('/plans', async (_req: AuthRequest, res: Response) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, code, name, plans(id, code, name, product_id)')
+    .order('code', { ascending: true });
+
+  if (error) { res.status(500).json({ error: 'Failed to fetch plans' }); return; }
+  res.json(data ?? []);
+});
+
+const generateKeySchema = z.object({
+  product:       z.enum(['ezpos', 'crossxpos']),
+  plan_id:       z.string().uuid(),
+  customer_name: z.string().min(1),
+  customer_email: z.string().email(),
+  key_type:      z.enum(['manual', 'demo', 'internal']).default('manual'),
+  note:          z.string().optional(),
+});
+
+// POST /api/admin/v1/keys/generate
+router.post('/keys/generate', async (req: AuthRequest, res: Response) => {
+  const parsed = generateKeySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
+    return;
+  }
+
+  const { product, plan_id, customer_name, customer_email, key_type, note } = parsed.data;
+
+  // Fetch plan
+  const { data: plan, error: planErr } = await supabase
+    .from('plans')
+    .select('id, code, name, product_id, products(code)')
+    .eq('id', plan_id)
+    .single();
+
+  if (planErr || !plan) {
+    res.status(404).json({ error: 'Plan not found' });
+    return;
+  }
+
+  // Upsert customer
+  let customerId: string;
+  const { data: existing } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('email', customer_email)
+    .maybeSingle();
+
+  if (existing) {
+    customerId = existing.id;
+  } else {
+    const { data: newCust, error: custErr } = await supabase
+      .from('customers')
+      .insert({ name: customer_name, email: customer_email })
+      .select('id')
+      .single();
+    if (custErr || !newCust) {
+      res.status(500).json({ error: 'Failed to create customer' });
+      return;
+    }
+    customerId = newCust.id;
+  }
+
+  // Determine expiry: demo/internal = 30 days, manual = lifetime (36500d)
+  const durationDays = (key_type === 'demo' || key_type === 'internal') ? 30 : 36500;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+  // Generate key  e.g. EZPOS-MANUAL-A1B2C3D4
+  const suffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const prefix = product.toUpperCase();
+  const typeTag = key_type.toUpperCase();
+  const licenseKey = `${prefix}-${typeTag}-${suffix}`;
+
+  // Fetch product row
+  const { data: productRow } = await supabase
+    .from('products')
+    .select('id')
+    .eq('code', product)
+    .single();
+
+  if (!productRow) {
+    res.status(500).json({ error: 'Product not found in products table' });
+    return;
+  }
+
+  // Create entitlement
+  const { data: entitlement, error: entErr } = await supabase
+    .from('entitlements')
+    .insert({
+      customer_id: customerId,
+      product_id: productRow.id,
+      plan_id,
+      status: 'active',
+      starts_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString(),
+      metadata_json: { key_type, note: note ?? '', issued_by: req.admin?.email ?? 'admin' },
+    })
+    .select('id')
+    .single();
+
+  if (entErr || !entitlement) {
+    res.status(500).json({ error: 'Failed to create entitlement' });
+    return;
+  }
+
+  // Create credential with key_type
+  const { data: cred, error: credErr } = await supabase
+    .from('license_credentials')
+    .insert({
+      entitlement_id: entitlement.id,
+      license_key: licenseKey,
+      status: 'active',
+      key_type,
+    })
+    .select('id')
+    .single();
+
+  if (credErr || !cred) {
+    res.status(500).json({ error: 'Failed to create license credential' });
+    return;
+  }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'key.generate',
+    entity_type: 'entitlement',
+    entity_id: entitlement.id,
+    payload_json: { license_key: licenseKey, product, plan_id, key_type, customer_email, note: note ?? '' },
+  });
+
+  res.status(201).json({
+    license_key: licenseKey,
+    key_type,
+    product,
+    plan_name: (plan as any).name,
+    customer_name,
+    customer_email,
+    expires_at: expiresAt.toISOString(),
+    entitlement_id: entitlement.id,
+  });
+});
+
+// GET /api/admin/v1/keys — list non-production keys (demo, manual, internal)
+router.get('/keys', async (_req: AuthRequest, res: Response) => {
+  const { data, error } = await supabase
+    .from('license_credentials')
+    .select(`
+      id, license_key, status, key_type, issued_at, created_at,
+      entitlements (
+        id, status, expires_at,
+        customers ( name, email ),
+        plans ( code, name, products ( code ) ),
+        activations ( id, status )
+      )
+    `)
+    .in('key_type', ['manual', 'demo', 'internal'])
+    .order('created_at', { ascending: false });
+
+  if (error) { res.status(500).json({ error: 'Failed to fetch keys' }); return; }
+
+  const result = (data ?? []).map((row: any) => {
+    const ent = row.entitlements;
+    const activeActivations = (ent?.activations ?? []).filter((a: any) => a.status === 'active').length;
+    return {
+      id: row.id,
+      license_key: row.license_key,
+      credential_status: row.status,
+      key_type: row.key_type as KeyType,
+      entitlement_id: ent?.id,
+      entitlement_status: ent?.status,
+      expires_at: ent?.expires_at,
+      customer_name: ent?.customers?.name,
+      customer_email: ent?.customers?.email,
+      product: ent?.plans?.products?.code,
+      plan_name: ent?.plans?.name,
+      plan_code: ent?.plans?.code,
+      active_activations: activeActivations,
+      issued_at: row.issued_at,
+      created_at: row.created_at,
+    };
+  });
+
+  res.json(result);
 });
 
 // ─── MONITORING ──────────────────────────────────────────────────────────────

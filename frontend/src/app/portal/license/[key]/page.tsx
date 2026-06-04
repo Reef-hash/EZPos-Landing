@@ -111,8 +111,9 @@ export default function PortalLicenseDetailPage() {
   if (!detail) return null;
 
   const { entitlement } = detail;
-  const expired = new Date(entitlement.expires_at) < new Date();
-  const daysLeft = Math.ceil((new Date(entitlement.expires_at).getTime() - Date.now()) / 86_400_000);
+  const isLifetime = entitlement.product === 'ezpos';
+  const expired = !isLifetime && new Date(entitlement.expires_at) < new Date();
+  const daysLeft = isLifetime ? Infinity : Math.ceil((new Date(entitlement.expires_at).getTime() - Date.now()) / 86_400_000);
   const activeDevices = detail.activations.filter(a => a.status === 'active');
 
   return (
@@ -146,7 +147,12 @@ export default function PortalLicenseDetailPage() {
               </div>
               <div className={`flex items-center gap-1.5 ${expired ? 'text-red-500' : daysLeft <= 14 ? 'text-amber-600' : 'text-gray-500'}`}>
                 <FontAwesomeIcon icon={faClock} className="w-3.5 h-3.5" />
-                {expired ? `Expired ${new Date(entitlement.expires_at).toLocaleDateString()}` : `Expires ${new Date(entitlement.expires_at).toLocaleDateString()}`}
+                {isLifetime
+                  ? 'Lifetime License'
+                  : expired
+                    ? `Expired ${new Date(entitlement.expires_at).toLocaleDateString()}`
+                    : `Expires ${new Date(entitlement.expires_at).toLocaleDateString()}`
+                }
               </div>
               <div className="flex items-center gap-1.5 text-gray-500">
                 <FontAwesomeIcon icon={faKey} className="w-3.5 h-3.5" />

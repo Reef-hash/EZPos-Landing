@@ -22,11 +22,14 @@ export async function sendLicenseEmail(params: LicenseEmailParams): Promise<void
 
   const { to, customerName, product, planName, licenseKey, expiresAt } = params;
   const productLabel = product === 'ezpos' ? 'EZPos Desktop' : 'CrossxPos';
-  const expiryDate = new Date(expiresAt).toLocaleDateString('en-MY', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const isLifetime = product === 'ezpos';
+  const expiryDate = isLifetime
+    ? 'Lifetime License'
+    : new Date(expiresAt).toLocaleDateString('en-MY', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
 
   await resend.emails.send({
     from: FROM_EMAIL,
@@ -58,6 +61,7 @@ export async function sendLicenseEmail(params: LicenseEmailParams): Promise<void
     <tr>
       <td style="padding:10px 12px;font-weight:bold">Valid Until</td>
       <td style="padding:10px 12px">${expiryDate}</td>
+    </tr>
     </tr>
   </table>
 

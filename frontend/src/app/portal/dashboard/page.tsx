@@ -102,8 +102,9 @@ export default function PortalDashboardPage() {
       <div className="space-y-3">
         {(data?.entitlements ?? []).map(ent => {
           const st = STATUS_ICON[ent.entitlement_status] ?? STATUS_ICON.pending;
-          const expired = new Date(ent.expires_at) < new Date();
-          const daysLeft = Math.ceil((new Date(ent.expires_at).getTime() - Date.now()) / 86_400_000);
+          const isLifetime = ent.product === 'ezpos';
+          const expired = !isLifetime && new Date(ent.expires_at) < new Date();
+          const daysLeft = isLifetime ? Infinity : Math.ceil((new Date(ent.expires_at).getTime() - Date.now()) / 86_400_000);
 
           return (
             <div key={ent.entitlement_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -134,9 +135,11 @@ export default function PortalDashboardPage() {
                       {/* Expiry */}
                       <span className={`flex items-center gap-1 text-xs ${expired ? 'text-red-500' : daysLeft <= 14 ? 'text-amber-600' : 'text-gray-400'}`}>
                         <FontAwesomeIcon icon={faClock} className="w-3 h-3" />
-                        {expired
-                          ? `Expired ${new Date(ent.expires_at).toLocaleDateString()}`
-                          : `Expires ${new Date(ent.expires_at).toLocaleDateString()} (${daysLeft}d)`
+                        {isLifetime
+                          ? 'Lifetime'
+                          : expired
+                            ? `Expired ${new Date(ent.expires_at).toLocaleDateString()}`
+                            : `Expires ${new Date(ent.expires_at).toLocaleDateString()} (${daysLeft}d)`
                         }
                       </span>
 
@@ -171,13 +174,13 @@ export default function PortalDashboardPage() {
               {expired && ent.entitlement_status === 'active' && (
                 <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 border border-red-100 px-3 py-2.5 text-xs text-red-600">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="w-3.5 h-3.5 shrink-0" />
-                  This license has expired. Please renew to continue using the software.
+                  This license is no longer valid. Please contact support@ezpos.my.
                 </div>
               )}
-              {!expired && daysLeft <= 14 && ent.entitlement_status === 'active' && (
+              {!isLifetime && !expired && daysLeft <= 14 && ent.entitlement_status === 'active' && (
                 <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 text-xs text-amber-700">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="w-3.5 h-3.5 shrink-0" />
-                  Expiring in <strong className="mx-1">{daysLeft} days</strong> — renew soon to avoid service interruption.
+                  Expiring in <strong className="mx-1">{daysLeft} days</strong> — contact support to extend.
                 </div>
               )}
             </div>

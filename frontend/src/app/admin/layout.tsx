@@ -7,16 +7,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGauge, faKey, faTags, faChartLine,
   faBoxesStacked,
-  faRightFromBracket, faShieldHalved, faWifi,
+  faRightFromBracket, faShieldHalved, faWifi, faFlask,
 } from '@fortawesome/free-solid-svg-icons';
 
 const navItems = [
-  { href: '/admin/dashboard', icon: faGauge, label: 'Dashboard' },
-  { href: '/admin/licenses', icon: faKey, label: 'Licenses' },
-  { href: '/admin/pricing', icon: faTags, label: 'Pricing Plans' },
-  { href: '/admin/addons', icon: faBoxesStacked, label: 'Add-ons' },
-  { href: '/admin/sales', icon: faChartLine, label: 'Sales' },
-  { href: '/admin/monitoring', icon: faWifi, label: 'Monitoring' },
+  { href: '/admin/dashboard', icon: faGauge,        label: 'Dashboard' },
+  { href: '/admin/licenses',  icon: faKey,           label: 'Licenses' },
+  { href: '/admin/keys',      icon: faFlask,         label: 'Issue Keys' },
+  { href: '/admin/pricing',   icon: faTags,          label: 'Pricing Plans' },
+  { href: '/admin/addons',    icon: faBoxesStacked,  label: 'Add-ons' },
+  { href: '/admin/sales',     icon: faChartLine,     label: 'Sales' },
+  { href: '/admin/monitoring',icon: faWifi,          label: 'Monitoring' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

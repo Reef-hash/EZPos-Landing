@@ -55,11 +55,13 @@ export interface Sale {
 export type EntitlementStatus = 'pending' | 'active' | 'suspended' | 'revoked' | 'expired';
 export type CredentialStatus = 'active' | 'revoked' | 'expired';
 export type ActivationStatus = 'pending' | 'active' | 'released' | 'blocked';
+export type KeyType = 'production' | 'manual' | 'demo' | 'internal';
 
 export interface V1License {
   id: string;
   license_key: string;
   credential_status: CredentialStatus;
+  key_type: KeyType;
   entitlement_id: string;
   entitlement_status: EntitlementStatus;
   expires_at: string;

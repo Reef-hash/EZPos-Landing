@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -6,10 +6,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faKey, faSpinner, faSearch, faDesktop, faMobileScreen,
   faChevronRight, faPause, faPlay, faCircleCheck, faCircleXmark,
-  faClock, faLaptop,
+  faClock, faLaptop, faFlask, faUser, faWrench,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '@/lib/api';
-import { V1License, EntitlementStatus } from '@/types';
+import { V1License, EntitlementStatus, KeyType } from '@/types';
 import toast from 'react-hot-toast';
 
 const STATUS_BADGE: Record<EntitlementStatus, { label: string; cls: string }> = {
@@ -20,10 +20,29 @@ const STATUS_BADGE: Record<EntitlementStatus, { label: string; cls: string }> = 
   pending:   { label: 'Pending',   cls: 'bg-gray-100 text-gray-500' },
 };
 
+function KeyTypePip({ type }: { type: KeyType }) {
+  if (type === 'production' || !type) return null;
+  const map = {
+    manual:   { icon: faUser,   cls: 'bg-blue-100 text-blue-700',     label: 'Manual' },
+    demo:     { icon: faFlask,  cls: 'bg-amber-100 text-amber-700',   label: 'Demo' },
+    internal: { icon: faWrench, cls: 'bg-purple-100 text-purple-700', label: 'Internal' },
+  };
+  const m = map[type];
+  return (
+    <span className={`ml-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${m.cls}`}>
+      <FontAwesomeIcon icon={m.icon} className="w-2.5 h-2.5" />
+      {m.label}
+    </span>
+  );
+}
+
+type TypeFilter = 'all' | 'production' | 'manual' | 'demo' | 'internal';
+
 export default function AdminLicensesPage() {
-  const [licenses, setLicenses] = useState<V1License[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [licenses, setLicenses]     = useState<V1License[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('production');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,11 +83,23 @@ export default function AdminLicensesPage() {
     }
   }
 
-  const filtered = licenses.filter(l =>
-    l.license_key?.toLowerCase().includes(search.toLowerCase()) ||
-    l.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
-    l.customer_email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = licenses.filter(l => {
+    const matchType = typeFilter === 'all' || (l.key_type ?? 'production') === typeFilter;
+    const q = search.toLowerCase();
+    const matchSearch = !q
+      || l.license_key?.toLowerCase().includes(q)
+      || l.customer_name?.toLowerCase().includes(q)
+      || l.customer_email?.toLowerCase().includes(q);
+    return matchType && matchSearch;
+  });
+
+  const counts: Record<TypeFilter, number> = {
+    all: licenses.length,
+    production: licenses.filter(l => !l.key_type || l.key_type === 'production').length,
+    manual: licenses.filter(l => l.key_type === 'manual').length,
+    demo: licenses.filter(l => l.key_type === 'demo').length,
+    internal: licenses.filter(l => l.key_type === 'internal').length,
+  };
 
   return (
     <div>
@@ -81,12 +112,33 @@ export default function AdminLicensesPage() {
           <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search licenses…"
+            placeholder="Search licensesâ€¦"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="border border-gray-300 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
+      </div>
+
+      {/* Type filter tabs */}
+      <div className="flex gap-1.5 mb-4">
+        {(['all', 'production', 'manual', 'demo', 'internal'] as TypeFilter[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              typeFilter === t ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {t === 'demo'     && <FontAwesomeIcon icon={faFlask}  className="w-3 h-3" />}
+            {t === 'manual'   && <FontAwesomeIcon icon={faUser}   className="w-3 h-3" />}
+            {t === 'internal' && <FontAwesomeIcon icon={faWrench} className="w-3 h-3" />}
+            <span className="capitalize">{t}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${typeFilter === t ? 'bg-white/20' : 'bg-gray-200 text-gray-600'}`}>
+              {counts[t]}
+            </span>
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -109,16 +161,20 @@ export default function AdminLicensesPage() {
                 const isLoading = actionLoading === lic.entitlement_id;
                 const canSuspend = lic.entitlement_status === 'active';
                 const canReinstate = lic.entitlement_status === 'suspended';
+                const isLifetime = lic.product === 'ezpos' && lic.key_type !== 'demo' && lic.key_type !== 'internal';
 
                 return (
                   <tr key={lic.id} className="hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      <span className="font-mono text-xs text-gray-700">{lic.license_key}</span>
-                      {lic.credential_status !== 'active' && (
-                        <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
-                          {lic.credential_status}
-                        </span>
-                      )}
+                      <div className="flex items-center flex-wrap gap-y-1">
+                        <span className="font-mono text-xs text-gray-700">{lic.license_key}</span>
+                        <KeyTypePip type={lic.key_type ?? 'production'} />
+                        {lic.credential_status !== 'active' && (
+                          <span className="ml-1.5 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+                            {lic.credential_status}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-medium text-gray-900">{lic.customer_name}</div>
@@ -132,9 +188,9 @@ export default function AdminLicensesPage() {
                       <div className="text-gray-500 text-xs mt-0.5">{lic.plan_name}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className={`flex items-center gap-1 text-xs ${new Date(lic.expires_at) < new Date() ? 'text-red-500' : 'text-gray-600'}`}>
+                      <div className={`flex items-center gap-1 text-xs ${!isLifetime && new Date(lic.expires_at) < new Date() ? 'text-red-500' : 'text-gray-600'}`}>
                         <FontAwesomeIcon icon={faClock} className="w-3 h-3" />
-                        {new Date(lic.expires_at).toLocaleDateString()}
+                        {isLifetime ? 'Lifetime' : new Date(lic.expires_at).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -185,7 +241,7 @@ export default function AdminLicensesPage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-gray-400">
+                  <td colSpan={7} className="text-center py-12 text-gray-400 text-sm">
                     No licenses found.
                   </td>
                 </tr>

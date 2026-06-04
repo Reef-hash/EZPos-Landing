@@ -106,7 +106,7 @@ export default function PaymentSuccessPage() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div><span className="text-gray-500">Product:</span> <span className="font-medium capitalize">{license?.product}</span></div>
             <div><span className="text-gray-500">Plan:</span> <span className="font-medium">{license?.plan_name}</span></div>
-            <div><span className="text-gray-500">Valid until:</span> <span className="font-medium">{license?.expires_at ? new Date(license.expires_at).toLocaleDateString() : '—'}</span></div>
+            <div><span className="text-gray-500">Valid until:</span> <span className="font-medium">{license?.product === 'ezpos' ? 'Lifetime' : license?.expires_at ? new Date(license.expires_at).toLocaleDateString() : '—'}</span></div>
             <div><span className="text-gray-500">Email:</span> <span className="font-medium">{license?.customer_email}</span></div>
           </div>
         </div>
