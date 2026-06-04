@@ -8,13 +8,8 @@ import {
   faCircleCheck, faCircleXmark, faPauseCircle, faLaptop,
   faChevronRight, faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/lib/supabase';
 import toast from 'react-hot-toast';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 type EntitlementStatus = 'pending' | 'active' | 'suspended' | 'revoked' | 'expired';
 

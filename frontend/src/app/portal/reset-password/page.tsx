@@ -4,13 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faSpinner, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/lib/supabase';
 import toast from 'react-hot-toast';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 export default function ResetPasswordPage() {
   const router = useRouter();

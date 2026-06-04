@@ -6,13 +6,8 @@ import {
   faShieldHalved, faSpinner, faEnvelope, faLock,
   faUserPlus, faRightToBracket, faEye, faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/lib/supabase';
 import toast from 'react-hot-toast';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 type Tab = 'login' | 'signup';
 

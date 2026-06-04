@@ -7,12 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faKey, faRightFromBracket, faGauge, faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import supabase from '@/lib/supabase';
 
 const navItems = [
   { href: '/portal/dashboard', icon: faGauge,  label: 'My Licenses' },
