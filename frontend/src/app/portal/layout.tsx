@@ -24,7 +24,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && pathname !== '/portal/login' && pathname !== '/portal/callback') {
+      const publicPaths = ['/portal/login', '/portal/callback', '/portal/reset-password'];
+      if (!session && !publicPaths.includes(pathname)) {
         router.replace('/portal/login');
       }
     });
@@ -35,7 +36,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     router.replace('/portal/login');
   }
 
-  if (pathname === '/portal/login' || pathname === '/portal/callback') {
+  if (pathname === '/portal/login' || pathname === '/portal/callback' || pathname === '/portal/reset-password') {
     return <>{children}</>;
   }
 
