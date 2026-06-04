@@ -5,10 +5,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle, faArrowRight, faStar, faDesktop, faMobileScreen,
   faCreditCard, faBuildingColumns, faQrcode, faSpinner, faBoxesStacked,
+  faRightToBracket, faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '@/lib/api';
 import { AddonItem, PricingPlan } from '@/types';
 import toast from 'react-hot-toast';
+import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 type ProductFilter = 'all' | 'ezpos' | 'crossxpos';
 
@@ -109,6 +117,14 @@ export default function PricingPage() {
   const [checkoutForm, setCheckoutForm] = useState<{ name: string; email: string } | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [authPromptPlan, setAuthPromptPlan] = useState<PricingPlan | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     const product = new URLSearchParams(window.location.search).get('product') as ProductFilter | null;
@@ -279,7 +295,14 @@ export default function PricingPage() {
               </ul>
 
               <button
-                onClick={() => {
+                onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    setAuthPromptPlan(plan);
+                    return;
+                  }
+                  setUserEmail(session.user.email ?? null);
+                  setCheckoutForm({ name: '', email: session.user.email ?? '' });
                   setSelectedPlan(plan);
                   setSelectedAddonIds([]);
                 }}
@@ -317,6 +340,7 @@ export default function PricingPage() {
                   type="text"
                   required
                   placeholder="Ahmad bin Ali"
+                  value={checkoutForm?.name ?? ''}
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   onChange={e => setCheckoutForm(p => ({ email: p?.email ?? '', name: e.target.value }))}
                 />
@@ -327,9 +351,14 @@ export default function PricingPage() {
                   type="email"
                   required
                   placeholder="you@example.com"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  value={checkoutForm?.email ?? ''}
+                  readOnly={!!userEmail}
+                  className={`w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${userEmail ? 'bg-gray-50 text-gray-500 cursor-default' : ''}`}
                   onChange={e => setCheckoutForm(p => ({ name: p?.name ?? '', email: e.target.value }))}
                 />
+                {userEmail && (
+                  <p className="text-xs text-gray-400 mt-1">Signed in as {userEmail}</p>
+                )}
               </div>
 
               <p className="text-xs text-gray-400">
@@ -405,6 +434,46 @@ export default function PricingPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Auth Gate Modal — shown when guest clicks Buy Now */}
+      {authPromptPlan && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center">
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FontAwesomeIcon icon={faRightToBracket} className="w-7 h-7 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-extrabold text-gray-900 mb-2">Sign in to purchase</h2>
+            <p className="text-gray-500 text-sm mb-1">
+              You need an account to buy <span className="font-semibold text-gray-700">{authPromptPlan.product_label} {authPromptPlan.name}</span>.
+            </p>
+            <p className="text-gray-400 text-xs mb-6">
+              Your license will be linked to your account so you can manage it anytime from the portal.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link
+                href={`/portal/login?redirect=/pricing&plan=${authPromptPlan.id}`}
+                className="flex items-center justify-center gap-2 w-full btn-primary py-2.5"
+              >
+                <FontAwesomeIcon icon={faRightToBracket} className="w-4 h-4" />
+                Sign In
+              </Link>
+              <Link
+                href={`/portal/login?tab=signup&redirect=/pricing&plan=${authPromptPlan.id}`}
+                className="flex items-center justify-center gap-2 w-full btn-outline border-gray-300 text-gray-700 hover:bg-gray-50 py-2.5"
+              >
+                <FontAwesomeIcon icon={faUserPlus} className="w-4 h-4" />
+                Create Account
+              </Link>
+              <button
+                onClick={() => setAuthPromptPlan(null)}
+                className="text-sm text-gray-400 hover:text-gray-600 mt-1"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

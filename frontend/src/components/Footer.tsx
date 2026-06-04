@@ -51,6 +51,7 @@ export default function Footer() {
               <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing & Plans</Link></li>
               <li><Link href="/license/verify" className="hover:text-white transition-colors">Verify License</Link></li>
               <li><Link href="/#faq" className="hover:text-white transition-colors">FAQ</Link></li>
+              <li><Link href="/portal/dashboard" className="hover:text-white transition-colors">Manage My License</Link></li>
             </ul>
           </div>
 

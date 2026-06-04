@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faShieldHalved, faSpinner, faEnvelope, faLock,
@@ -23,6 +23,15 @@ export default function PortalLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [signupSent, setSignupSent] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('/portal/dashboard');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'signup') setTab('signup');
+    const redirect = params.get('redirect');
+    if (redirect) setRedirectTo(redirect);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +39,7 @@ export default function PortalLoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      window.location.href = '/portal/dashboard';
+      window.location.href = redirectTo;
     } catch (err: any) {
       toast.error(err.message === 'Invalid login credentials'
         ? 'Incorrect email or password.'

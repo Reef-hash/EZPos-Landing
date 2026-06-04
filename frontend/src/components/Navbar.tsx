@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faXmark, faCashRegister } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faXmark, faCashRegister, faRightToBracket, faUserPlus, faGauge } from '@fortawesome/free-solid-svg-icons';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 const navLinks = [
   { href: '/#products', label: 'Products' },
@@ -14,6 +20,17 @@ const navLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setLoggedIn(!!session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
@@ -38,9 +55,35 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link href="/pricing" className="btn-primary text-sm py-2 px-4">
+        {/* Desktop CTA */}
+        <div className="hidden md:flex items-center gap-2">
+          {loggedIn ? (
+            <Link
+              href="/portal/dashboard"
+              className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-900 px-3 py-2 rounded-lg hover:bg-brand-50 transition-colors"
+            >
+              <FontAwesomeIcon icon={faGauge} className="w-4 h-4" />
+              My Account
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/portal/login"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-brand-600 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <FontAwesomeIcon icon={faRightToBracket} className="w-4 h-4" />
+                Sign In
+              </Link>
+              <Link
+                href="/portal/login?tab=signup"
+                className="flex items-center gap-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 px-3 py-2 rounded-lg transition-colors"
+              >
+                <FontAwesomeIcon icon={faUserPlus} className="w-4 h-4" />
+                Sign Up
+              </Link>
+            </>
+          )}
+          <Link href="/pricing" className="btn-primary text-sm py-2 px-4 ml-1">
             Get License
           </Link>
         </div>
@@ -68,9 +111,40 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="/pricing" onClick={() => setOpen(false)} className="btn-primary w-full justify-center">
-            Get License
-          </Link>
+          <div className="border-t border-gray-100 pt-3 space-y-2">
+            {loggedIn ? (
+              <Link
+                href="/portal/dashboard"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-brand-700 font-medium py-2"
+              >
+                <FontAwesomeIcon icon={faGauge} className="w-4 h-4" />
+                My Account
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/portal/login"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-gray-700 hover:text-brand-600 font-medium py-2"
+                >
+                  <FontAwesomeIcon icon={faRightToBracket} className="w-4 h-4" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/portal/login?tab=signup"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 text-gray-700 hover:text-brand-600 font-medium py-2"
+                >
+                  <FontAwesomeIcon icon={faUserPlus} className="w-4 h-4" />
+                  Sign Up
+                </Link>
+              </>
+            )}
+            <Link href="/pricing" onClick={() => setOpen(false)} className="btn-primary w-full justify-center">
+              Get License
+            </Link>
+          </div>
         </div>
       )}
     </header>

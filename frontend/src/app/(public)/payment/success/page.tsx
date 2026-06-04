@@ -5,8 +5,15 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle, faKey, faSpinner, faEnvelope, faArrowRight, faExclamationTriangle,
+  faGauge, faUserPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '@/lib/api';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 interface LicenseInfo {
   key: string;
@@ -23,9 +30,13 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
   useEffect(() => {
     setSessionId(new URLSearchParams(window.location.search).get('session_id'));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAlreadyLoggedIn(!!session);
+    });
   }, []);
 
   useEffect(() => {
@@ -105,12 +116,46 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700 flex items-start gap-3 text-left mb-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700 flex items-start gap-3 text-left mb-6">
           <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          A copy of your license key has been sent to your email address.
+          A copy of your license key has been sent to <strong>{license?.customer_email}</strong>.
         </div>
 
-        <Link href="/" className="btn-primary">
+        {/* Portal CTA */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-left mb-8">
+          <h3 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-2">
+            <FontAwesomeIcon icon={faGauge} className="w-4 h-4 text-brand-600" />
+            Manage your license anytime
+          </h3>
+          <p className="text-xs text-gray-500 mb-4">
+            Sign in to your portal to view your license status, active devices, and request transfers. Use the same email address you used at checkout.
+          </p>
+          {alreadyLoggedIn ? (
+            <Link href="/portal/dashboard" className="flex items-center justify-center gap-2 w-full btn-primary py-2.5">
+              <FontAwesomeIcon icon={faGauge} className="w-4 h-4" />
+              Go to My Portal
+            </Link>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Link
+                href={`/portal/login?tab=signup`}
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 px-4 py-2.5 rounded-xl transition-colors"
+              >
+                <FontAwesomeIcon icon={faUserPlus} className="w-4 h-4" />
+                Create Account
+              </Link>
+              <Link
+                href="/portal/login"
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-colors"
+              >
+                <FontAwesomeIcon icon={faGauge} className="w-4 h-4" />
+                Sign In
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
           Back to Home <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
         </Link>
       </div>
