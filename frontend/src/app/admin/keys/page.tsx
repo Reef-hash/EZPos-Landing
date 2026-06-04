@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faKey, faSpinner, faPlus, faDesktop, faMobileScreen,
   faClock, faCircleCheck, faCircleXmark, faFlask, faWrench,
-  faUser, faCopy, faCheck, faSearch, faLaptop,
+  faUser, faCopy, faCheck, faSearch, faLaptop, faTrash,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '@/lib/api';
 import { V1License, KeyType } from '@/types';
@@ -64,8 +64,9 @@ export default function AdminKeysPage() {
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | Exclude<KeyType, 'production'>>('all');
-  const [showForm, setShowForm]   = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm]     = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
+  const [deleting, setDeleting]       = useState<string | null>(null);
 
   // form state
   const [form, setForm] = useState({
@@ -93,6 +94,20 @@ export default function AdminKeysPage() {
   const plansForProduct = products
     .find(p => p.code === form.product)
     ?.plans ?? [];
+
+  async function handleDelete(k: V1License) {
+    if (!confirm(`Delete key ${k.license_key}?\n\nIni akan padam dari database secara kekal.`)) return;
+    setDeleting(k.id);
+    try {
+      await api.delete(`/api/admin/v1/keys/${k.id}`);
+      setKeys(prev => prev.filter(x => x.id !== k.id));
+      toast.success('Key deleted');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'Failed to delete key');
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -319,7 +334,7 @@ export default function AdminKeysPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['Key', 'Type', 'Customer', 'Product / Plan', 'Expires', 'Devices', 'Status'].map(h => (
+                {['Key', 'Type', 'Customer', 'Product / Plan', 'Expires', 'Devices', 'Status', ''].map(h => (
                   <th key={h} className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">{h}</th>
                 ))}
               </tr>
@@ -370,6 +385,16 @@ export default function AdminKeysPage() {
                         <FontAwesomeIcon icon={k.entitlement_status === 'active' ? faCircleCheck : faCircleXmark} className="w-3 h-3" />
                         {k.entitlement_status}
                       </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => handleDelete(k)}
+                        disabled={deleting === k.id}
+                        title="Delete key"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
+                      >
+                        <FontAwesomeIcon icon={deleting === k.id ? faSpinner : faTrash} className={`w-3.5 h-3.5 ${deleting === k.id ? 'animate-spin' : ''}`} />
+                      </button>
                     </td>
                   </tr>
                 );

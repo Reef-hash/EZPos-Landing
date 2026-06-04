@@ -348,6 +348,55 @@ router.post('/keys/generate', async (req: AuthRequest, res: Response) => {
   });
 });
 
+// DELETE /api/admin/v1/keys/:id — delete credential + entitlement + activations
+router.delete('/keys/:id', async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  // Get entitlement_id before deleting
+  const { data: cred, error: credFetchErr } = await supabase
+    .from('license_credentials')
+    .select('id, license_key, entitlement_id, key_type')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (credFetchErr || !cred) {
+    res.status(404).json({ error: 'Key not found' });
+    return;
+  }
+
+  // Only allow deleting non-production keys
+  if ((cred as any).key_type === 'production') {
+    res.status(403).json({ error: 'Production keys cannot be deleted from here' });
+    return;
+  }
+
+  const entitlementId = (cred as any).entitlement_id;
+
+  // Delete in order: activations → validation_events → audit_events → credential → entitlement
+  if (entitlementId) {
+    await supabase.from('activations').delete().eq('entitlement_id', entitlementId);
+    await supabase.from('validation_events').delete().eq('entitlement_id', entitlementId);
+    await supabase.from('audit_events').delete().eq('entity_id', entitlementId).eq('entity_type', 'entitlement');
+  }
+
+  await supabase.from('license_credentials').delete().eq('id', id);
+
+  if (entitlementId) {
+    await supabase.from('entitlements').delete().eq('id', entitlementId);
+  }
+
+  await supabase.from('audit_events').insert({
+    actor_type: 'admin',
+    actor_id: req.admin?.email ?? 'unknown',
+    action: 'key.delete',
+    entity_type: 'license_credential',
+    entity_id: id,
+    payload_json: { license_key: (cred as any).license_key, deleted_by: req.admin?.email },
+  });
+
+  res.json({ success: true });
+});
+
 // GET /api/admin/v1/keys — list non-production keys (demo, manual, internal)
 router.get('/keys', async (_req: AuthRequest, res: Response) => {
   const { data, error } = await supabase
