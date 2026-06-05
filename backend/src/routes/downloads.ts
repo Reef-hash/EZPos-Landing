@@ -5,7 +5,7 @@ const router = Router();
 
 const LATEST_JSON_URL =
   process.env.EZPOS_LATEST_JSON_URL ??
-  'https://raw.githubusercontent.com/Reef-hash/EZPos-Upate-System/main/latest.json';
+  'https://raw.githubusercontent.com/Reef-hash/EZPos-Update-System/main/latest.json';
 
 // Cache in-memory for 10 minutes so we don't hammer GitHub on every page load
 let cache: { data: object; fetchedAt: number } | null = null;
