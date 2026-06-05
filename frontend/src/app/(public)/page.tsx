@@ -54,7 +54,7 @@ export default function HomePage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* EZPos Card */}
-          <div className="card border-2 border-ezpos/20 hover:border-ezpos transition-colors group">
+          <div className="card border-2 border-ezpos/20 hover:border-ezpos transition-colors group relative flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-ezpos-light rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faDesktop} className="w-6 h-6 text-ezpos" />
@@ -68,7 +68,7 @@ export default function HomePage() {
               A powerful Windows desktop POS for retail shops. Handle sales, stock, barcodes,
               and receipts — all offline with no internet required.
             </p>
-            <ul className="space-y-2 mb-6">
+            <ul className="space-y-2 mb-6 flex-1">
               {['Barcode scanning', 'Stock management', 'Sales reports', 'ESC/POS receipt printing', 'Offline — no internet needed'].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                   <FontAwesomeIcon icon={faCheckCircle} className="w-4 h-4 text-ezpos flex-shrink-0" />
@@ -76,13 +76,15 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <Link href="/products/ezpos" className="inline-flex items-center gap-2 text-ezpos font-semibold hover:gap-3 transition-all">
-              Learn more <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
-            </Link>
-            <Link href="/download" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-ezpos mt-2 transition-colors">
-              <FontAwesomeIcon icon={faDownload} className="w-3.5 h-3.5" />
-              Download installer
-            </Link>
+            <div className="flex items-center justify-between mt-auto">
+              <Link href="/products/ezpos" className="inline-flex items-center gap-2 text-ezpos font-semibold hover:gap-3 transition-all">
+                Learn more <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
+              </Link>
+              <Link href="/download" className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-ezpos hover:bg-ezpos-dark px-4 py-2 rounded-xl transition-colors">
+                <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
+                Download
+              </Link>
+            </div>
           </div>
 
           {/* CrossxPos Card */}
