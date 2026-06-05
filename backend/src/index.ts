@@ -14,6 +14,7 @@ import adminRoutes from './routes/admin';
 import adminV1Routes from './routes/adminV1';
 import portalRoutes from './routes/portal';
 import webhookRoutes from './routes/webhook';
+import downloadsRoutes from './routes/downloads';
 
 dotenv.config();
 
@@ -24,8 +25,25 @@ const PORT = process.env.PORT || 4000;
 app.use(helmet());
 
 // CORS
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:4173',
+  // Allow LAN IPs for dev/testing (pattern: 192.168.x.x or 10.x.x.x)
+  ...(process.env.EXTRA_ORIGINS ? process.env.EXTRA_ORIGINS.split(',').map((o) => o.trim()) : []),
+]
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow non-browser requests (curl, Postman, server-to-server) and whitelisted origins
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+    // Allow any LAN origin in development
+    if (process.env.NODE_ENV !== 'production' && /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(origin)) {
+      return callback(null, true)
+    }
+    return callback(new Error(`CORS: origin ${origin} not allowed`))
+  },
   credentials: true,
 }));
 
@@ -63,6 +81,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/v1', adminV1Routes);
 app.use('/api/portal', portalRoutes);
+app.use('/api/downloads', downloadsRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

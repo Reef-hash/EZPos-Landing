@@ -5,7 +5,7 @@ import {
   faShieldHalved, faGaugeHigh, faHeadset, faChartLine,
   faBarcode, faUtensils, faUsers, faStore,
   faQuoteLeft, faStar, faCircleQuestion,
-  faChevronDown,
+  faChevronDown, faDownload,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
@@ -78,6 +78,10 @@ export default function HomePage() {
             </ul>
             <Link href="/products/ezpos" className="inline-flex items-center gap-2 text-ezpos font-semibold hover:gap-3 transition-all">
               Learn more <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
+            </Link>
+            <Link href="/download" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-ezpos mt-2 transition-colors">
+              <FontAwesomeIcon icon={faDownload} className="w-3.5 h-3.5" />
+              Download installer
             </Link>
           </div>
 

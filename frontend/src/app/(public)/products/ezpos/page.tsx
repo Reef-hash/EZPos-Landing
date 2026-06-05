@@ -31,10 +31,14 @@ export default function EZPosProductPage() {
             The reliable Windows POS system for retail shops, minimarkets, and convenience stores.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/pricing?product=ezpos" className="btn-primary bg-yellow-400 hover:bg-yellow-300 text-gray-900">
+            <Link href="/download" className="btn-primary bg-yellow-400 hover:bg-yellow-300 text-gray-900">
+              <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
+              Download Free
+            </Link>
+            <Link href="/pricing?product=ezpos" className="btn-outline border-white text-white hover:bg-white/10">
               Get License <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
             </Link>
-            <Link href="/compare" className="btn-outline border-white text-white hover:bg-white/10">
+            <Link href="/compare" className="btn-outline border-white/50 text-white/80 hover:bg-white/10">
               Compare Products
             </Link>
           </div>
@@ -90,6 +94,10 @@ export default function EZPosProductPage() {
           </div>
           <Link href="/pricing?product=ezpos" className="btn-primary">
             View Full Pricing <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
+          </Link>
+          <Link href="/download" className="inline-flex items-center gap-2 text-sm text-ezpos font-semibold mt-3 hover:gap-3 transition-all">
+            <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
+            Download Installer
           </Link>
         </div>
       </section>
