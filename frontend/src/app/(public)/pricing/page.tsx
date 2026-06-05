@@ -400,7 +400,7 @@ export default function PricingPage() {
                           className="mt-1"
                         />
                         {addon.image_url ? (
-                          <img src={addon.image_url} alt={addon.name} className="w-12 h-12 rounded-md object-cover border border-gray-200" />
+                          <img src={addon.image_url} alt={addon.name} loading="lazy" className="w-12 h-12 rounded-md object-cover border border-gray-200" />
                         ) : (
                           <div className="w-12 h-12 rounded-md bg-gray-100 border border-gray-200" />
                         )}

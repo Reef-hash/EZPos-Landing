@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -8,6 +9,19 @@ import {
   faChevronDown, faDownload,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+
+export const metadata: Metadata = {
+  title: 'EZPos — Smart POS Software for Malaysian Businesses',
+  description:
+    'EZPos offers modern point-of-sale software for Malaysian businesses. EZPos Desktop for retail shops and CrossxPos for restaurants. Simple, offline-ready, and affordable.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'EZPos — Smart POS Software for Malaysian Businesses',
+    description:
+      'EZPos Desktop for retail shops. CrossxPos for restaurants. Offline-ready, affordable POS solutions built for Malaysia.',
+    url: '/',
+  },
+};
 
 export default function HomePage() {
   return (

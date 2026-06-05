@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -6,6 +7,19 @@ import {
   faChartColumn, faToggleOn, faPrint, faClockRotateLeft,
   faWifi, faShieldHalved,
 } from '@fortawesome/free-solid-svg-icons';
+
+export const metadata: Metadata = {
+  title: 'CrossxPos — Web-Based Restaurant POS for Cafes & F&B',
+  description:
+    'CrossxPos is a modern web-based restaurant POS for cafes, restaurants, and F&B businesses. Table management, kitchen display, multi-device operations. Works offline.',
+  alternates: { canonical: '/products/crossxpos' },
+  openGraph: {
+    title: 'CrossxPos — Web-Based Restaurant POS',
+    description:
+      'CrossxPos is a web-based restaurant POS with table management, kitchen display, and offline support. Works on any device.',
+    url: '/products/crossxpos',
+  },
+};
 
 const features = [
   { icon: faTableCells, title: 'Table Management', desc: 'Visual table map with real-time status — occupied, empty, or reserved.' },

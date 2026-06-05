@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -5,6 +6,19 @@ import {
   faBoxesStacked, faReceipt, faChartBar, faBolt,
   faDatabase, faShieldHalved, faDownload,
 } from '@fortawesome/free-solid-svg-icons';
+
+export const metadata: Metadata = {
+  title: 'EZPos Desktop — Windows Retail POS Software',
+  description:
+    'EZPos Desktop is a Windows POS system for retail shops and minimarkets. Barcode scanning, stock management, ESC/POS receipt printing, offline-first. Starting from RM599.',
+  alternates: { canonical: '/products/ezpos' },
+  openGraph: {
+    title: 'EZPos Desktop — Windows Retail POS Software',
+    description:
+      'EZPos Desktop is a Windows POS system for retail shops. Barcode scanning, stock management, offline-ready. Starting from RM599.',
+    url: '/products/ezpos',
+  },
+};
 
 const features = [
   { icon: faBarcode, title: 'Barcode Scanning', desc: 'Scan products instantly with any USB barcode scanner. Fast checkout every time.' },

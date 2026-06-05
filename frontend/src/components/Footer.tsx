@@ -22,14 +22,14 @@ export default function Footer() {
               Modern, affordable point-of-sale software built for Malaysian businesses.
             </p>
             <div className="flex gap-4 mt-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faFacebook} className="w-5 h-5" />
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="EZPos on Facebook" className="hover:text-white transition-colors">
+                <FontAwesomeIcon icon={faFacebook} className="w-5 h-5" aria-hidden="true" />
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faInstagram} className="w-5 h-5" />
+              <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="EZPos on Instagram" className="hover:text-white transition-colors">
+                <FontAwesomeIcon icon={faInstagram} className="w-5 h-5" aria-hidden="true" />
               </a>
-              <a href="https://wa.me/601234567890" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                <FontAwesomeIcon icon={faWhatsapp} className="w-5 h-5" />
+              <a href="https://wa.me/601234567890" target="_blank" rel="noreferrer" aria-label="Chat with EZPos on WhatsApp" className="hover:text-white transition-colors">
+                <FontAwesomeIcon icon={faWhatsapp} className="w-5 h-5" aria-hidden="true" />
               </a>
             </div>
           </div>
