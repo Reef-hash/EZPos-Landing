@@ -1,4 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'EZPos vs CrossxPos — Full Feature Comparison',
+  description:
+    'Compare EZPos Desktop (retail POS) vs CrossxPos (restaurant POS). See side-by-side features, pricing, and which product suits your business.',
+  alternates: { canonical: '/compare' },
+  openGraph: {
+    title: 'EZPos vs CrossxPos — Full Feature Comparison',
+    description:
+      'Compare EZPos Desktop and CrossxPos side by side to find the right POS for your business.',
+    url: '/compare',
+  },
+};
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle, faXmark, faArrowRight,
@@ -85,7 +99,7 @@ export default function ComparePage() {
       <div className="grid md:grid-cols-2 gap-6 mt-12">
         <div className="card border-2 border-ezpos/30 text-center">
           <FontAwesomeIcon icon={faDesktop} className="w-10 h-10 text-ezpos mb-3" />
-          <h3 className="font-bold text-xl text-gray-900 mb-2">Choose EZPos if you…</h3>
+          <h2 className="font-bold text-xl text-gray-900 mb-2">Choose EZPos if you…</h2>
           <ul className="text-sm text-gray-600 space-y-1.5 text-left inline-block">
             {['Run a retail shop or minimarket', 'Need barcode scanning', 'Use a Windows PC at the counter', 'Want stock management'].map(i => (
               <li key={i} className="flex items-center gap-2">
@@ -101,7 +115,7 @@ export default function ComparePage() {
         </div>
         <div className="card border-2 border-crossx/30 text-center">
           <FontAwesomeIcon icon={faMobileScreen} className="w-10 h-10 text-crossx mb-3" />
-          <h3 className="font-bold text-xl text-gray-900 mb-2">Choose CrossxPos if you…</h3>
+          <h2 className="font-bold text-xl text-gray-900 mb-2">Choose CrossxPos if you…</h2>
           <ul className="text-sm text-gray-600 space-y-1.5 text-left inline-block">
             {['Run a cafe, restaurant, or F&B', 'Need table & kitchen management', 'Need multi-device staff + cashier flow', 'Need Android/iOS support'].map(i => (
               <li key={i} className="flex items-center gap-2">
