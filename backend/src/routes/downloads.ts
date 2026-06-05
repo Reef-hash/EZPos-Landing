@@ -22,14 +22,23 @@ router.get('/ezpos', async (_req: Request, res: Response) => {
 
     const json = await new Promise<Record<string, unknown>>((resolve, reject) => {
       const req = https.get(LATEST_JSON_URL, { headers: { 'User-Agent': 'EZPos-Web-Backend/1.0' } }, (res) => {
-        let raw = '';
-        res.on('data', (chunk: string) => { raw += chunk; });
+        if (res.statusCode !== 200) {
+          reject(new Error(`GitHub returned ${res.statusCode}`));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => { chunks.push(chunk); });
         res.on('end', () => {
-          try { resolve(JSON.parse(raw)); } catch { reject(new Error('Invalid JSON')); }
+          try {
+            const raw = Buffer.concat(chunks).toString('utf-8');
+            resolve(JSON.parse(raw));
+          } catch (e) {
+            reject(new Error(`Failed to parse JSON: ${e instanceof Error ? e.message : 'unknown'}`));
+          }
         });
       });
       req.on('error', reject);
-      req.setTimeout(8000, () => { req.destroy(new Error('Timeout')); });
+      req.setTimeout(8000, () => { req.destroy(new Error('Request timeout')); });
     });
 
     const data = {
