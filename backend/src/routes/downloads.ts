@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import https from 'https';
 
 const router = Router();
 
@@ -19,16 +20,17 @@ router.get('/ezpos', async (_req: Request, res: Response) => {
       return;
     }
 
-    const response = await fetch(LATEST_JSON_URL, {
-      headers: { 'User-Agent': 'EZPos-Web-Backend/1.0' },
-      signal: AbortSignal.timeout(8000),
+    const json = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      const req = https.get(LATEST_JSON_URL, { headers: { 'User-Agent': 'EZPos-Web-Backend/1.0' } }, (res) => {
+        let raw = '';
+        res.on('data', (chunk: string) => { raw += chunk; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(raw)); } catch { reject(new Error('Invalid JSON')); }
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(8000, () => { req.destroy(new Error('Timeout')); });
     });
-
-    if (!response.ok) {
-      throw new Error(`GitHub returned ${response.status}`);
-    }
-
-    const json = await response.json() as Record<string, unknown>;
 
     const data = {
       version:       json.version       ?? null,
