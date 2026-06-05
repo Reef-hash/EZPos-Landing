@@ -29,6 +29,10 @@ router.post('/checkout', async (req: Request, res: Response) => {
   }
 
   const { planId, product, addonIds, customerEmail, customerName } = parsed.data;
+  if (product === 'crossxpos') {
+    res.status(403).json({ error: 'CrossxPos is currently under development and not available for purchase.' });
+    return;
+  }
 
   // Fetch plan from DB
   const { data: plan, error: planError } = await supabase

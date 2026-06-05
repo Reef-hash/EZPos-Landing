@@ -34,10 +34,13 @@ export default function CrossxPosProductPage() {
             The modern restaurant POS that runs on any device — tablet, phone, or PC.
             Built for cafes, restaurants, and F&amp;B chains.
           </p>
+          <p className="inline-block mb-8 text-sm font-semibold text-amber-900 bg-amber-100 border border-amber-200 rounded-xl px-4 py-2">
+            Under Development — licensing and purchasing are not available yet.
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/pricing?product=crossxpos" className="btn-primary bg-yellow-400 hover:bg-yellow-300 text-gray-900">
-              Get License <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
-            </Link>
+            <span className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold bg-gray-300 text-gray-700 cursor-not-allowed">
+              Coming Soon
+            </span>
             <Link href="/compare" className="btn-outline border-white text-white hover:bg-white/10">
               Compare Products
             </Link>
@@ -69,7 +72,7 @@ export default function CrossxPosProductPage() {
         <div className="section text-center">
           <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Affordable for Every F&B Business</h2>
           <p className="text-gray-600 mb-8 text-lg">
-            Starting from RM499/year. Pick the plan that fits your size.
+            Pricing will be announced when CrossxPos launches.
           </p>
           <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto text-left mb-8">
             {[
@@ -92,9 +95,9 @@ export default function CrossxPosProductPage() {
               </div>
             ))}
           </div>
-          <Link href="/pricing?product=crossxpos" className="btn-primary bg-crossx hover:bg-crossx-dark">
-            View Full Pricing <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
-          </Link>
+          <span className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold bg-gray-300 text-gray-700 cursor-not-allowed">
+            Pricing Coming Soon
+          </span>
         </div>
       </section>
     </>

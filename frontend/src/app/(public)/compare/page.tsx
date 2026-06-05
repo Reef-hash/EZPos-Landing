@@ -22,7 +22,7 @@ const rows = [
   { feature: 'Works on tablets/phones', ezpos: false, crossx: true },
   { feature: 'Android/iOS APK', ezpos: false, crossx: 'Roadmap' },
   { feature: 'License system', ezpos: true, crossx: true },
-  { feature: 'Starting price', ezpos: 'RM 599/yr', crossx: 'RM 499/yr' },
+  { feature: 'Starting price', ezpos: 'RM 599/yr', crossx: 'Coming soon' },
 ];
 
 export default function ComparePage() {
@@ -110,9 +110,9 @@ export default function ComparePage() {
             ))}
           </ul>
           <div className="mt-5">
-            <Link href="/pricing?product=crossxpos" className="btn-primary bg-crossx hover:bg-crossx-dark">
-              Get CrossxPos <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
-            </Link>
+            <span className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 font-semibold bg-gray-300 text-gray-700 cursor-not-allowed">
+              CrossxPos Coming Soon
+            </span>
           </div>
         </div>
       </div>

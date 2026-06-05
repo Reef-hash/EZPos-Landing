@@ -14,6 +14,7 @@ import supabase from '@/lib/supabase';
 import Link from 'next/link';
 
 type ProductFilter = 'all' | 'ezpos' | 'crossxpos';
+const CROSSXPOS_UNDER_DEVELOPMENT = true;
 
 const FALLBACK_CORE_PLANS: PricingPlan[] = [
   {
@@ -159,6 +160,8 @@ export default function PricingPage() {
   }, []);
 
   const filtered = activeTab === 'all' ? plans : plans.filter(p => p.product === activeTab);
+  const isCrossxPosBlocked = (product: PricingPlan['product']) =>
+    CROSSXPOS_UNDER_DEVELOPMENT && product === 'crossxpos';
 
   const modalAddons = selectedPlan
     ? addons.filter(a => a.product === 'all' || a.product === selectedPlan.product)
@@ -231,6 +234,11 @@ export default function PricingPage() {
             </button>
           ))}
         </div>
+        {CROSSXPOS_UNDER_DEVELOPMENT && (
+          <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 inline-block">
+            CrossxPos is currently under development. Purchasing is temporarily disabled.
+          </p>
+        )}
       </div>
 
       {/* Plans grid */}
@@ -240,77 +248,93 @@ export default function PricingPage() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map(plan => (
-            <div
-              key={plan.id}
-              className={`card relative flex flex-col ${
-                plan.is_popular
-                  ? plan.product === 'ezpos'
-                    ? 'border-2 border-ezpos ring-2 ring-ezpos/10'
-                    : 'border-2 border-crossx ring-2 ring-crossx/10'
-                  : ''
-              }`}
-            >
-              {plan.is_popular && (
-                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 badge text-white text-xs ${
-                  plan.product === 'ezpos' ? 'bg-ezpos' : 'bg-crossx'
-                }`}>
-                  <FontAwesomeIcon icon={faStar} className="w-3 h-3" /> Most Popular
-                </span>
-              )}
-
-              {/* Product badge */}
-              <span className={`badge text-xs mb-3 w-fit ${
-                plan.product === 'ezpos' ? 'bg-ezpos-light text-ezpos' : 'bg-crossx-light text-crossx'
-              }`}>
-                <FontAwesomeIcon icon={plan.product === 'ezpos' ? faDesktop : faMobileScreen} className="w-3 h-3" />
-                {plan.product_label}
-              </span>
-
-              <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-              <p className="text-gray-500 text-sm mb-4">{plan.description}</p>
-              <div className="mb-5">
-                <span className={`text-4xl font-extrabold ${plan.product === 'ezpos' ? 'text-ezpos' : 'text-crossx'}`}>
-                  RM {plan.price_myr.toFixed(0)}
-                </span>
-                <span className="text-gray-400 text-sm ml-1">
-                  {plan.duration_days >= 36000 ? '/ lifetime' : '/ year'}
-                </span>
-              </div>
-
-              <ul className="space-y-2 mb-6 flex-1">
-                {plan.features.map(f => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-gray-700">
-                    <FontAwesomeIcon icon={faCheckCircle} className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                      plan.product === 'ezpos' ? 'text-ezpos' : 'text-crossx'
-                    }`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={async () => {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) {
-                    setAuthPromptPlan(plan);
-                    return;
-                  }
-                  setUserEmail(session.user.email ?? null);
-                  setCheckoutForm({ name: '', email: session.user.email ?? '' });
-                  setSelectedPlan(plan);
-                  setSelectedAddonIds([]);
-                }}
-                className={`w-full btn-primary justify-center ${
-                  plan.product === 'ezpos'
-                    ? 'bg-ezpos hover:bg-ezpos-dark'
-                    : 'bg-crossx hover:bg-crossx-dark'
+          {filtered.map(plan => {
+            const blocked = isCrossxPosBlocked(plan.product);
+            return (
+              <div
+                key={plan.id}
+                className={`card relative flex flex-col ${
+                  plan.is_popular
+                    ? plan.product === 'ezpos'
+                      ? 'border-2 border-ezpos ring-2 ring-ezpos/10'
+                      : 'border-2 border-crossx ring-2 ring-crossx/10'
+                    : ''
                 }`}
               >
-                Buy Now <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+                {plan.is_popular && (
+                  <span className={`absolute -top-3 left-1/2 -translate-x-1/2 badge text-white text-xs ${
+                    plan.product === 'ezpos' ? 'bg-ezpos' : 'bg-crossx'
+                  }`}>
+                    <FontAwesomeIcon icon={faStar} className="w-3 h-3" /> Most Popular
+                  </span>
+                )}
+
+                {/* Product badge */}
+                <span className={`badge text-xs mb-3 w-fit ${
+                  plan.product === 'ezpos' ? 'bg-ezpos-light text-ezpos' : 'bg-crossx-light text-crossx'
+                }`}>
+                  <FontAwesomeIcon icon={plan.product === 'ezpos' ? faDesktop : faMobileScreen} className="w-3 h-3" />
+                  {plan.product_label}
+                </span>
+                {blocked && (
+                  <span className="badge text-xs mb-3 w-fit bg-amber-50 text-amber-700 border border-amber-200">
+                    Under Development
+                  </span>
+                )}
+
+                <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
+                <p className="text-gray-500 text-sm mb-4">{plan.description}</p>
+                <div className="mb-5">
+                  <span className={`text-4xl font-extrabold ${plan.product === 'ezpos' ? 'text-ezpos' : 'text-crossx'}`}>
+                    RM {plan.price_myr.toFixed(0)}
+                  </span>
+                  <span className="text-gray-400 text-sm ml-1">
+                    {plan.duration_days >= 36000 ? '/ lifetime' : '/ year'}
+                  </span>
+                </div>
+
+                <ul className="space-y-2 mb-6 flex-1">
+                  {plan.features.map(f => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-gray-700">
+                      <FontAwesomeIcon icon={faCheckCircle} className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        plan.product === 'ezpos' ? 'text-ezpos' : 'text-crossx'
+                      }`} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={async () => {
+                    if (blocked) return;
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) {
+                      setAuthPromptPlan(plan);
+                      return;
+                    }
+                    setUserEmail(session.user.email ?? null);
+                    setCheckoutForm({ name: '', email: session.user.email ?? '' });
+                    setSelectedPlan(plan);
+                    setSelectedAddonIds([]);
+                  }}
+                  disabled={blocked}
+                  className={`w-full btn-primary justify-center ${
+                    blocked
+                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      : plan.product === 'ezpos'
+                      ? 'bg-ezpos hover:bg-ezpos-dark'
+                      : 'bg-crossx hover:bg-crossx-dark'
+                  }`}
+                >
+                  {blocked ? (
+                    'Coming Soon'
+                  ) : (
+                    <>Buy Now <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" /></>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 

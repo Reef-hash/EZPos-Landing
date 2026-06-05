@@ -96,6 +96,7 @@ export default function HomePage() {
               <div>
                 <h3 className="text-xl font-bold text-gray-900">CrossxPos</h3>
                 <span className="badge bg-crossx-light text-crossx text-xs">Restaurant POS</span>
+                <span className="badge bg-amber-50 text-amber-700 text-xs ml-2 border border-amber-200">Under Development</span>
               </div>
             </div>
             <p className="text-gray-600 mb-5 leading-relaxed">
