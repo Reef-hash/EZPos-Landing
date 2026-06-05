@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faMobileScreen, faCheckCircle, faArrowRight,
+  faTableCells, faUtensils, faKitchenSet, faUsers,
+  faChartColumn, faToggleOn, faPrint, faClockRotateLeft,
+  faWifi, faShieldHalved,
+} from '@fortawesome/free-solid-svg-icons';
 
 export const metadata: Metadata = {
   title: 'CrossxPos — Web-Based Restaurant POS for Cafes & F&B',
@@ -13,13 +20,6 @@ export const metadata: Metadata = {
     url: '/products/crossxpos',
   },
 };
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faMobileScreen, faCheckCircle, faArrowRight,
-  faTableCells, faUtensils, faKitchenSet, faUsers,
-  faChartColumn, faToggleOn, faPrint, faClockRotateLeft,
-  faWifi, faShieldHalved,
-} from '@fortawesome/free-solid-svg-icons';
 
 const features = [
   { icon: faTableCells, title: 'Table Management', desc: 'Visual table map with real-time status — occupied, empty, or reserved.' },

@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCheckCircle, faXmark, faArrowRight,
+  faDesktop, faMobileScreen,
+} from '@fortawesome/free-solid-svg-icons';
 
 export const metadata: Metadata = {
   title: 'EZPos vs CrossxPos — Full Feature Comparison',
@@ -13,11 +18,6 @@ export const metadata: Metadata = {
     url: '/compare',
   },
 };
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle, faXmark, faArrowRight,
-  faDesktop, faMobileScreen,
-} from '@fortawesome/free-solid-svg-icons';
 
 const rows = [
   { feature: 'Platform', ezpos: 'Windows Desktop (.exe)', crossx: 'Web App (any browser)' },

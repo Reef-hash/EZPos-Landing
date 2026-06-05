@@ -1,5 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faDesktop, faCheckCircle, faArrowRight, faBarcode,
+  faBoxesStacked, faReceipt, faChartBar, faBolt,
+  faDatabase, faShieldHalved, faDownload,
+} from '@fortawesome/free-solid-svg-icons';
 
 export const metadata: Metadata = {
   title: 'EZPos Desktop — Windows Retail POS Software',
@@ -13,12 +19,6 @@ export const metadata: Metadata = {
     url: '/products/ezpos',
   },
 };
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faDesktop, faCheckCircle, faArrowRight, faBarcode,
-  faBoxesStacked, faReceipt, faChartBar, faBolt,
-  faDatabase, faShieldHalved, faDownload,
-} from '@fortawesome/free-solid-svg-icons';
 
 const features = [
   { icon: faBarcode, title: 'Barcode Scanning', desc: 'Scan products instantly with any USB barcode scanner. Fast checkout every time.' },

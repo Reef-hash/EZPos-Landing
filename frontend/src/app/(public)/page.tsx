@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faDesktop, faMobileScreen, faCheckCircle, faArrowRight,
+  faShieldHalved, faGaugeHigh, faHeadset, faChartLine,
+  faBarcode, faUtensils, faUsers, faStore,
+  faQuoteLeft, faStar, faCircleQuestion,
+  faChevronDown, faDownload,
+} from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export const metadata: Metadata = {
   title: 'EZPos — Smart POS Software for Malaysian Businesses',
@@ -14,14 +22,6 @@ export const metadata: Metadata = {
     url: '/',
   },
 };
-import {
-  faDesktop, faMobileScreen, faCheckCircle, faArrowRight,
-  faShieldHalved, faGaugeHigh, faHeadset, faChartLine,
-  faBarcode, faUtensils, faUsers, faStore,
-  faQuoteLeft, faStar, faCircleQuestion,
-  faChevronDown, faDownload,
-} from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export default function HomePage() {
   return (
