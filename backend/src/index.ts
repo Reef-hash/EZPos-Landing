@@ -26,6 +26,7 @@ app.use(helmet());
 
 // CORS
 const allowedOrigins = [
+  'null', // Capacitor WebView / file:// origin (Android APK)
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
