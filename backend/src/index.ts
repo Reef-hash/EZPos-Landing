@@ -40,7 +40,8 @@ app.use(cors({
     // Allow non-browser requests (curl, Postman, server-to-server) and whitelisted origins
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
     // Allow Capacitor WebView origins (Android APK / iOS WKWebView)
-    if (/^capacitor:\/\/|^ionic:\/\/|^file:\/\//.test(origin)) return callback(null, true)
+    // Capacitor uses various schemes: capacitor://, ionic://, file://, https://localhost
+    if (/^(capacitor:\/\/|ionic:\/\/|file:\/\/|https?:\/\/localhost)/.test(origin)) return callback(null, true)
     // Allow any LAN origin in development
     if (process.env.NODE_ENV !== 'production' && /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(origin)) {
       return callback(null, true)
