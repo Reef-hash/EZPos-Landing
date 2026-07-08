@@ -5,6 +5,12 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev';
 const PORTAL_URL = process.env.PORTAL_URL ?? 'https://ez-pos-landing.vercel.app/portal/login';
 
+const PRODUCT_LABEL: Record<string, string> = {
+  ezpos: 'EZPos Desktop',
+  crossxpos: 'CrossxPos',
+  ezoffice: 'EZOffice',
+};
+
 export interface LicenseEmailParams {
   to: string;
   customerName: string;
@@ -21,8 +27,8 @@ export async function sendLicenseEmail(params: LicenseEmailParams): Promise<void
   }
 
   const { to, customerName, product, planName, licenseKey, expiresAt } = params;
-  const productLabel = product === 'ezpos' ? 'EZPos Desktop' : 'CrossxPos';
-  const isLifetime = product === 'ezpos';
+  const productLabel = PRODUCT_LABEL[product] ?? product;
+  const isLifetime = product === 'ezpos' || product === 'ezoffice';
   const expiryDate = isLifetime
     ? 'Lifetime License'
     : new Date(expiresAt).toLocaleDateString('en-MY', {
@@ -94,7 +100,7 @@ export async function sendEntitlementStatusEmail(params: EntitlementEmailParams)
   if (!process.env.RESEND_API_KEY) return;
 
   const { to, customerName, product, action } = params;
-  const productLabel = product === 'ezpos' ? 'EZPos Desktop' : 'CrossxPos';
+  const productLabel = PRODUCT_LABEL[product] ?? product;
 
   const messages: Record<typeof action, { subject: string; body: string }> = {
     suspended: {

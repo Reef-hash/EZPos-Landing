@@ -26,6 +26,11 @@ module.exports = {
           light: '#ede9fe',
           dark: '#4c1d95',
         },
+        ezoffice: {
+          DEFAULT: '#6d5df6',
+          light: '#ece9fe',
+          dark: '#4c3fb8',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

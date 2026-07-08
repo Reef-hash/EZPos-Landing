@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const router = Router();
 
-type ProductType = 'ezpos' | 'crossxpos';
+type ProductType = 'ezpos' | 'crossxpos' | 'ezoffice';
 type ValidationStatus =
   | 'valid'
   | 'expired'
@@ -19,18 +19,38 @@ type BindingMode = 'strict' | 'flexible';
 type ProductPolicy = {
   bindingMode: BindingMode;
   seatLimit: number;
+  graceDays: number;
+  revalidateAfterHours: number;
+};
+
+// Fallback policy used only if a product's product_policy_profiles row is
+// missing (should not happen in normal operation — every product must be
+// onboarded with a policy row, see supabase-ezoffice-onboarding.sql for the
+// pattern). Mirrors the values this file hardcoded before policy became
+// DB-driven, so a missing row degrades to the old behaviour rather than a
+// surprising new one.
+const FALLBACK_POLICY_BY_PRODUCT: Record<ProductType, ProductPolicy> = {
+  ezpos: { bindingMode: 'strict', seatLimit: 1, graceDays: 7, revalidateAfterHours: 24 },
+  crossxpos: { bindingMode: 'flexible', seatLimit: 3, graceDays: 3, revalidateAfterHours: 12 },
+  ezoffice: { bindingMode: 'strict', seatLimit: 1, graceDays: 75, revalidateAfterHours: 36 },
 };
 
 const validateSchema = z.object({
   licenseKey: z.string().min(1),
-  product: z.enum(['ezpos', 'crossxpos']).optional(),
+  product: z.enum(['ezpos', 'crossxpos', 'ezoffice']).optional(),
   deviceId: z.string().min(1).optional(),
   installationId: z.string().min(1).optional(),
 });
 
 const activateSchema = z.object({
   licenseKey: z.string().min(1),
-  product: z.enum(['ezpos', 'crossxpos']),
+  product: z.enum(['ezpos', 'crossxpos', 'ezoffice']),
+  deviceId: z.string().min(1),
+  installationId: z.string().min(1).optional(),
+});
+
+const activateByAccountSchema = z.object({
+  product: z.enum(['ezpos', 'crossxpos', 'ezoffice']),
   deviceId: z.string().min(1),
   installationId: z.string().min(1).optional(),
 });
@@ -67,6 +87,7 @@ function buildValidationResult(status: ValidationStatus, details?: {
   expiresAt?: string;
   customerName?: string;
   expectedProduct?: ProductType;
+  policy?: Pick<ProductPolicy, 'graceDays' | 'revalidateAfterHours'>;
 }): {
   valid: boolean;
   decision: ValidationDecision;
@@ -128,8 +149,10 @@ function buildValidationResult(status: ValidationStatus, details?: {
     expired: status === 'expired',
     expectedProduct: details?.expectedProduct,
     policy: {
-      graceDays: details?.product === 'crossxpos' ? 3 : 7,
-      revalidateAfterHours: details?.product === 'crossxpos' ? 12 : 24,
+      graceDays: details?.policy?.graceDays
+        ?? FALLBACK_POLICY_BY_PRODUCT[details?.product ?? 'ezpos'].graceDays,
+      revalidateAfterHours: details?.policy?.revalidateAfterHours
+        ?? FALLBACK_POLICY_BY_PRODUCT[details?.product ?? 'ezpos'].revalidateAfterHours,
     },
   };
 
@@ -274,13 +297,54 @@ async function resolveEntitlementIdByLicenseKey(licenseKey: string): Promise<str
   return null;
 }
 
-function getProductPolicy(product: ProductType): ProductPolicy {
-  if (product === 'ezpos') {
-    return { bindingMode: 'strict', seatLimit: 1 };
+/**
+ * Loads a product's policy from product_policy_profiles (device binding mode,
+ * seat limit, offline grace days, revalidate interval). Falls back to
+ * FALLBACK_POLICY_BY_PRODUCT if the row or the table itself is missing —
+ * every product should be onboarded with a policy row (see
+ * supabase-ezoffice-onboarding.sql for the seeding pattern), but a missing
+ * row degrades to safe defaults rather than throwing. Not cached: this table
+ * is admin-configurable and the lookup is a single indexed query, so a
+ * restart should not be required for a policy change to take effect.
+ */
+async function getProductIdByCode(product: ProductType): Promise<string | null> {
+  const { data } = await supabase
+    .from('products')
+    .select('id')
+    .eq('code', product)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+async function getProductPolicy(product: ProductType): Promise<ProductPolicy> {
+  const productId = await getProductIdByCode(product);
+  if (!productId) {
+    return FALLBACK_POLICY_BY_PRODUCT[product];
   }
 
-  // Baseline policy before dedicated profile-table lookup.
-  return { bindingMode: 'flexible', seatLimit: 3 };
+  const { data, error } = await supabase
+    .from('product_policy_profiles')
+    .select('device_binding_mode, seat_limit, offline_grace_days, revalidate_after_hours')
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error && !isMissingRelationError(error)) {
+      console.warn('[licensing-v1] policy profile lookup failed, using fallback', {
+        product,
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return FALLBACK_POLICY_BY_PRODUCT[product];
+  }
+
+  return {
+    bindingMode: data.device_binding_mode as BindingMode,
+    seatLimit: data.seat_limit as number,
+    graceDays: data.offline_grace_days as number,
+    revalidateAfterHours: data.revalidate_after_hours as number,
+  };
 }
 
 async function getActiveDeviceIds(entitlementId: string): Promise<string[] | null> {
@@ -304,13 +368,18 @@ async function getActiveDeviceIds(entitlementId: string): Promise<string[] | nul
   return null;
 }
 
-function rebuildFromStatus(source: ValidationResult, status: ValidationStatus): ValidationResult {
+function rebuildFromStatus(
+  source: ValidationResult,
+  status: ValidationStatus,
+  policy?: Pick<ProductPolicy, 'graceDays' | 'revalidateAfterHours'>,
+): ValidationResult {
   return buildValidationResult(status, {
     product: source.product as ProductType | undefined,
     planName: source.plan,
     expiresAt: source.expiresAt,
     customerName: source.customerName,
     expectedProduct: source.expectedProduct,
+    policy: policy ?? { graceDays: source.policy.graceDays, revalidateAfterHours: source.policy.revalidateAfterHours },
   });
 }
 
@@ -333,30 +402,38 @@ async function applyDevicePolicy(
     return current;
   }
 
-  const policy = getProductPolicy(current.product as ProductType);
+  const policy = await getProductPolicy(current.product as ProductType);
+  // Attach the real DB-driven policy hint (graceDays/revalidateAfterHours) onto
+  // the response regardless of the device-binding outcome below — callers must
+  // see the product's actual offline-grace policy, not the generic fallback.
+  const withPolicy: ValidationResult = {
+    ...current,
+    policy: { graceDays: policy.graceDays, revalidateAfterHours: policy.revalidateAfterHours },
+  };
+
   if (!deviceId) {
     return policy.bindingMode === 'strict'
-      ? rebuildFromStatus(current, 'device_mismatch')
-      : current;
+      ? rebuildFromStatus(withPolicy, 'device_mismatch', policy)
+      : withPolicy;
   }
 
   if (activeDeviceIds.includes(deviceId)) {
-    return current;
+    return withPolicy;
   }
 
   if (activeDeviceIds.length === 0) {
-    return current;
+    return withPolicy;
   }
 
   if (policy.bindingMode === 'strict') {
-    return rebuildFromStatus(current, 'device_mismatch');
+    return rebuildFromStatus(withPolicy, 'device_mismatch', policy);
   }
 
   if (activeDeviceIds.length >= policy.seatLimit) {
-    return rebuildFromStatus(current, 'seat_exceeded');
+    return rebuildFromStatus(withPolicy, 'seat_exceeded', policy);
   }
 
-  return current;
+  return withPolicy;
 }
 
 async function persistValidationEvent(
@@ -527,6 +604,7 @@ router.post('/activate', async (req: Request, res: Response) => {
     return;
   }
 
+  const transferPolicy = await getProductPolicy(product);
   res.json({
     ...validation,
     persistence,
@@ -535,7 +613,147 @@ router.post('/activate', async (req: Request, res: Response) => {
       deviceId,
       installationId: installationId ?? null,
       activatedAt: new Date().toISOString(),
-      transferMode: product === 'crossxpos' ? 'self_service' : 'admin_mediated',
+      transferMode: transferPolicy.bindingMode === 'flexible' ? 'self_service' : 'admin_mediated',
+    },
+  });
+});
+
+// ─── Activate by account (email/magic-link identity) ─────────────────────────
+// Bridges a Supabase-session customer identity to their license key, so a
+// desktop client (e.g. EZOffice) can activate without the user ever seeing or
+// typing a license key — they authenticate once via Supabase magic-link/OTP,
+// and this endpoint resolves + activates the matching entitlement for them.
+// The customer-resolution logic mirrors requirePortalAuth in portal.ts.
+
+async function resolveCustomerFromBearerToken(
+  req: Request
+): Promise<{ id: string; email: string } | null> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user?.email) {
+    return null;
+  }
+
+  const { data: customer, error: custError } = await supabase
+    .from('customers')
+    .select('id, email')
+    .eq('email', user.email)
+    .maybeSingle();
+
+  if (custError || !customer) {
+    return null;
+  }
+
+  return customer;
+}
+
+async function findActiveLicenseKeyForCustomer(
+  customerId: string,
+  product: ProductType
+): Promise<string | null> {
+  const productId = await getProductIdByCode(product);
+  if (!productId) return null;
+
+  const { data, error } = await supabase
+    .from('entitlements')
+    .select('status, license_credentials(license_key, status)')
+    .eq('customer_id', customerId)
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    return null;
+  }
+
+  for (const ent of data as any[]) {
+    if (ent.status === 'revoked' || ent.status === 'expired') continue;
+    const cred = (ent.license_credentials ?? []).find((c: any) => c.status === 'active');
+    if (cred) return cred.license_key as string;
+  }
+
+  return null;
+}
+
+// POST /api/v1/licensing/activate-by-account
+router.post('/activate-by-account', async (req: Request, res: Response) => {
+  const parsed = activateByAccountSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      decision: 'deny',
+      status: 'not_found',
+      reason_code: 'INVALID_REQUEST',
+      client_action: 'fix_request_payload',
+      errors: parsed.error.flatten(),
+    });
+    return;
+  }
+
+  const customer = await resolveCustomerFromBearerToken(req);
+  if (!customer) {
+    res.status(401).json({
+      decision: 'deny',
+      status: 'not_found',
+      reason_code: 'INVALID_SESSION',
+      client_action: 'sign_in_again',
+      error: 'Invalid or expired session — please sign in again.',
+    });
+    return;
+  }
+
+  const { product, deviceId, installationId } = parsed.data;
+  const licenseKey = await findActiveLicenseKeyForCustomer(customer.id, product);
+  if (!licenseKey) {
+    res.json({
+      valid: false,
+      decision: 'deny',
+      status: 'not_found',
+      reason_code: 'NO_ENTITLEMENT_FOR_ACCOUNT',
+      client_action: 'contact_support',
+      product,
+      expired: false,
+      policy: FALLBACK_POLICY_BY_PRODUCT[product],
+      error: `No active ${product} license found for ${customer.email}.`,
+    });
+    return;
+  }
+
+  const validated = await validateLicenseKey(licenseKey, product);
+  const validation = await applyDevicePolicy(licenseKey, validated, deviceId);
+  const persistence = await persistValidationAndActivation(
+    licenseKey,
+    validation,
+    req,
+    deviceId,
+    installationId
+  );
+
+  // licenseKey is included in this response (unlike a browser-facing endpoint,
+  // this is a first-party desktop client authenticating its own account) so
+  // the client can cache it locally and call the plain /validate endpoint for
+  // silent background revalidation later, without requiring the customer to
+  // re-authenticate via OTP on every check — that would break offline-first
+  // continuity (see docs/LICENSE_INTEGRATION_AUDIT.md target flow).
+  if (validation.decision !== 'allow') {
+    res.json({ ...validation, persistence, licenseKey });
+    return;
+  }
+
+  const transferPolicy = await getProductPolicy(product);
+  res.json({
+    ...validation,
+    persistence,
+    licenseKey,
+    activation: {
+      status: 'active',
+      deviceId,
+      installationId: installationId ?? null,
+      activatedAt: new Date().toISOString(),
+      transferMode: transferPolicy.bindingMode === 'flexible' ? 'self_service' : 'admin_mediated',
     },
   });
 });

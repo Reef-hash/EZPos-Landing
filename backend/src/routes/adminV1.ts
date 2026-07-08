@@ -214,7 +214,7 @@ router.get('/plans', async (_req: AuthRequest, res: Response) => {
 });
 
 const generateKeySchema = z.object({
-  product:       z.enum(['ezpos', 'crossxpos']),
+  product:       z.enum(['ezpos', 'crossxpos', 'ezoffice']),
   plan_id:       z.string().uuid(),
   customer_name: z.string().min(1),
   customer_email: z.string().email(),

@@ -502,8 +502,14 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
   console.log('[V1] Entitlement revoked — refund for', license.key);
 }
 
+const LICENSE_KEY_PREFIX: Record<string, string> = {
+  ezpos: 'EZP',
+  crossxpos: 'CXP',
+  ezoffice: 'EZO',
+};
+
 function generateLicenseKey(product: string, plan: string): string {
-  const prefix = product === 'ezpos' ? 'EZP' : 'CXP';
+  const prefix = LICENSE_KEY_PREFIX[product] ?? product.toUpperCase().substring(0, 3);
   const planCode = plan.toUpperCase().substring(0, 3);
   const random = crypto.randomBytes(8).toString('hex').toUpperCase();
   return `${prefix}-${planCode}-${random.substring(0, 4)}-${random.substring(4, 8)}-${random.substring(8)}`;

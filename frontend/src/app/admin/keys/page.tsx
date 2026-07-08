@@ -70,7 +70,7 @@ export default function AdminKeysPage() {
 
   // form state
   const [form, setForm] = useState({
-    product: 'ezpos' as 'ezpos' | 'crossxpos',
+    product: 'ezpos' as 'ezpos' | 'crossxpos' | 'ezoffice',
     plan_id: '',
     customer_name: '',
     customer_email: '',
@@ -209,11 +209,12 @@ export default function AdminKeysPage() {
               <label className="block text-xs font-medium text-gray-700 mb-1">Product</label>
               <select
                 value={form.product}
-                onChange={e => setForm(f => ({ ...f, product: e.target.value as 'ezpos' | 'crossxpos', plan_id: '' }))}
+                onChange={e => setForm(f => ({ ...f, product: e.target.value as 'ezpos' | 'crossxpos' | 'ezoffice', plan_id: '' }))}
                 className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="ezpos">EZPos Desktop</option>
                 <option value="crossxpos">CrossxPos</option>
+                <option value="ezoffice">EZOffice</option>
               </select>
             </div>
 
@@ -341,7 +342,7 @@ export default function AdminKeysPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(k => {
-                const isLifetime = k.product === 'ezpos' && k.key_type !== 'demo' && k.key_type !== 'internal';
+                const isLifetime = (k.product === 'ezpos' || k.product === 'ezoffice') && k.key_type !== 'demo' && k.key_type !== 'internal';
                 return (
                   <tr key={k.id} className="hover:bg-gray-50">
                     <td className="py-3 px-4">
@@ -358,8 +359,12 @@ export default function AdminKeysPage() {
                       <div className="text-gray-400 text-xs">{k.customer_email ?? '—'}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${k.product === 'ezpos' ? 'bg-ezpos-light text-ezpos' : 'bg-crossx-light text-crossx'}`}>
-                        <FontAwesomeIcon icon={k.product === 'ezpos' ? faDesktop : faMobileScreen} className="w-3 h-3" />
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        k.product === 'ezpos' ? 'bg-ezpos-light text-ezpos'
+                        : k.product === 'crossxpos' ? 'bg-crossx-light text-crossx'
+                        : 'bg-ezoffice-light text-ezoffice'
+                      }`}>
+                        <FontAwesomeIcon icon={k.product === 'crossxpos' ? faMobileScreen : faDesktop} className="w-3 h-3" />
                         {k.product}
                       </span>
                       <div className="text-gray-400 text-xs mt-0.5">{k.plan_name}</div>

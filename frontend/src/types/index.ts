@@ -1,6 +1,6 @@
 export interface PricingPlan {
   id: string;
-  product: 'ezpos' | 'crossxpos';
+  product: 'ezpos' | 'crossxpos' | 'ezoffice';
   product_label: string;
   name: string;
   description: string;
@@ -26,7 +26,7 @@ export interface AddonItem {
 export interface License {
   id: string;
   key: string;
-  product: 'ezpos' | 'crossxpos';
+  product: 'ezpos' | 'crossxpos' | 'ezoffice';
   plan_id: string;
   plan_name: string;
   customer_name: string;
@@ -39,7 +39,7 @@ export interface License {
 
 export interface Sale {
   id: string;
-  product: 'ezpos' | 'crossxpos';
+  product: 'ezpos' | 'crossxpos' | 'ezoffice';
   plan_id: string;
   plan_name: string;
   customer_name: string;
@@ -67,7 +67,7 @@ export interface V1License {
   expires_at: string;
   customer_name: string;
   customer_email: string;
-  product: 'ezpos' | 'crossxpos';
+  product: 'ezpos' | 'crossxpos' | 'ezoffice';
   plan_name: string;
   plan_code: string;
   active_activations: number;
@@ -116,7 +116,7 @@ export interface V1LicenseDetail {
     expires_at: string;
     starts_at: string;
     customer: { id: string; name: string; email: string; phone: string | null };
-    product: 'ezpos' | 'crossxpos';
+    product: 'ezpos' | 'crossxpos' | 'ezoffice';
     product_name: string;
     plan_code: string;
     plan_name: string;

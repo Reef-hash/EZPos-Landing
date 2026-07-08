@@ -14,7 +14,7 @@ const ALLOWED_PAYMENT_METHOD_TYPES: Stripe.Checkout.SessionCreateParams.PaymentM
 
 const checkoutSchema = z.object({
   planId: z.string().uuid(),
-  product: z.enum(['ezpos', 'crossxpos']),
+  product: z.enum(['ezpos', 'crossxpos', 'ezoffice']),
   addonIds: z.array(z.string().uuid()).optional().default([]),
   customerEmail: z.string().email(),
   customerName: z.string().min(1),
