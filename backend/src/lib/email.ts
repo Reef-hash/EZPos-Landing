@@ -2,7 +2,12 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev';
+// RESEND_FROM_EMAIL holds just the raw address (e.g. noreply@mail.catalysm.my) —
+// this file is shared across all products (ezpos/crossxpos/ezoffice), so the
+// display NAME is built per-send from the product label below. A static combined
+// "Name <address>" env value would show the wrong brand name to other products'
+// customers (e.g. an EZPos buyer seeing "EZOffice <...>" in their inbox).
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev';
 const PORTAL_URL = process.env.PORTAL_URL ?? 'https://ez-pos-landing.vercel.app/portal/login';
 
 const PRODUCT_LABEL: Record<string, string> = {
@@ -10,6 +15,10 @@ const PRODUCT_LABEL: Record<string, string> = {
   crossxpos: 'CrossxPos',
   ezoffice: 'EZOffice',
 };
+
+function fromHeader(productLabel: string): string {
+  return `${productLabel} <${FROM_ADDRESS}>`;
+}
 
 export interface LicenseEmailParams {
   to: string;
@@ -38,7 +47,7 @@ export async function sendLicenseEmail(params: LicenseEmailParams): Promise<void
       });
 
   await resend.emails.send({
-    from: FROM_EMAIL,
+    from: fromHeader(productLabel),
     to,
     subject: `Your ${productLabel} License — Thank You!`,
     html: `
@@ -120,7 +129,7 @@ export async function sendEntitlementStatusEmail(params: EntitlementEmailParams)
   const msg = messages[action];
 
   await resend.emails.send({
-    from: FROM_EMAIL,
+    from: fromHeader(productLabel),
     to,
     subject: msg.subject,
     html: `
