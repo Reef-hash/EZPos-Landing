@@ -135,6 +135,36 @@ export interface V1MonitoringStats {
   recentDenials: Array<{ reason_code: string; created_at: string }>;
 }
 
+// ─── Security Events ──────────────────────────────────────────────────────────
+
+export type SecuritySeverity = 'info' | 'low' | 'medium' | 'high';
+
+export interface SecurityEvent {
+  id: string;
+  event_type: string;
+  severity: SecuritySeverity;
+  ip: string | null;
+  path: string | null;
+  method: string | null;
+  message: string;
+  meta_json: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface SecuritySeverityCounts {
+  total: number;
+  info: number;
+  low: number;
+  medium: number;
+  high: number;
+}
+
+export interface SecuritySummary {
+  last24h: SecuritySeverityCounts;
+  last7days: SecuritySeverityCounts;
+  topIps: Array<{ ip: string; count: number }>;
+}
+
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export interface DashboardStats {

@@ -440,6 +440,66 @@ router.get('/keys', async (_req: AuthRequest, res: Response) => {
   res.json(result);
 });
 
+// ─── SECURITY EVENTS ─────────────────────────────────────────────────────────
+
+// GET /api/admin/v1/security/events?limit=100&severity=high
+router.get('/security/events', async (req: AuthRequest, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 100, 200);
+  const severity = req.query.severity as string | undefined;
+
+  let query = supabase
+    .from('security_events')
+    .select('id, event_type, severity, ip, path, method, message, meta_json, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (severity && ['info', 'low', 'medium', 'high'].includes(severity)) {
+    query = query.eq('severity', severity);
+  }
+
+  const { data, error } = await query;
+  if (error) { res.status(500).json({ error: 'Failed to fetch security events' }); return; }
+  res.json(data ?? []);
+});
+
+// GET /api/admin/v1/security/summary
+router.get('/security/summary', async (_req: AuthRequest, res: Response) => {
+  const now = new Date();
+  const last24h = new Date(now); last24h.setHours(now.getHours() - 24);
+  const last7d = new Date(now); last7d.setDate(now.getDate() - 7);
+
+  const [last24hRes, last7dRes] = await Promise.all([
+    supabase.from('security_events').select('severity, ip').gte('created_at', last24h.toISOString()),
+    supabase.from('security_events').select('severity').gte('created_at', last7d.toISOString()),
+  ]);
+
+  function countBySeverity(rows: { severity: string }[]) {
+    return {
+      total: rows.length,
+      info: rows.filter(r => r.severity === 'info').length,
+      low: rows.filter(r => r.severity === 'low').length,
+      medium: rows.filter(r => r.severity === 'medium').length,
+      high: rows.filter(r => r.severity === 'high').length,
+    };
+  }
+
+  const rows24h = last24hRes.data ?? [];
+  const ipCounts: Record<string, number> = {};
+  rows24h.forEach((r: any) => {
+    if (r.ip) ipCounts[r.ip] = (ipCounts[r.ip] ?? 0) + 1;
+  });
+  const topIps = Object.entries(ipCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([ip, count]) => ({ ip, count }));
+
+  res.json({
+    last24h: countBySeverity(rows24h),
+    last7days: countBySeverity(last7dRes.data ?? []),
+    topIps,
+  });
+});
+
 // ─── MONITORING ──────────────────────────────────────────────────────────────
 
 // GET /api/admin/v1/monitoring/stats

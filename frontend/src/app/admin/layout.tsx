@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGauge, faKey, faTags, faChartLine,
   faBoxesStacked,
-  faRightFromBracket, faShieldHalved, faWifi, faFlask,
+  faRightFromBracket, faShieldHalved, faWifi, faFlask, faBug,
 } from '@fortawesome/free-solid-svg-icons';
 
 const navItems = [
@@ -18,6 +18,7 @@ const navItems = [
   { href: '/admin/addons',    icon: faBoxesStacked,  label: 'Add-ons' },
   { href: '/admin/sales',     icon: faChartLine,     label: 'Sales' },
   { href: '/admin/monitoring',icon: faWifi,          label: 'Monitoring' },
+  { href: '/admin/security',  icon: faBug,           label: 'Security Watch' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

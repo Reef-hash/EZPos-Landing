@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { logSecurityEvent, suspiciousPathMessage } from './lib/securityLog';
 
 import authRoutes from './routes/auth';
 import licenseRoutes from './routes/licenses';
@@ -92,8 +93,21 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Paths nobody legitimate ever requests — env files, VCS internals, common
+// CMS/admin panel probes, backup/credential dumps. A hit here is recon, not
+// a typo, so it's worth a security-panel entry even though it's just a 404.
+const SUSPICIOUS_PATH_PATTERN = /\.env|\.git|wp-admin|wp-login|phpmyadmin|\.sql$|\.bak$|id_rsa|\.aws\/|docker-compose|\.ssh\//i;
+
 // 404 handler
-app.use((_req, res) => {
+app.use((req, res) => {
+  if (SUSPICIOUS_PATH_PATTERN.test(req.originalUrl)) {
+    void logSecurityEvent({
+      type: 'suspicious_path_probe',
+      severity: 'low',
+      req,
+      message: suspiciousPathMessage(req.ip ?? 'unknown', req.originalUrl),
+    });
+  }
   res.status(404).json({ error: 'Route not found' });
 });
 
