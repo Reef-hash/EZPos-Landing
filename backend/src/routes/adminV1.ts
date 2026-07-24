@@ -272,8 +272,12 @@ router.post('/keys/generate', async (req: AuthRequest, res: Response) => {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + durationDays);
 
-  // Generate key  e.g. EZPOS-MANUAL-A1B2C3D4
-  const suffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+  // Generate key, e.g. EZPOS-MANUAL-A1B2-C3D4-E5F6A7B8. 8 random bytes (64
+  // bits) to match the entropy of paid-purchase keys (see
+  // generateLicenseKey in webhook.ts) — this used to be 4 bytes (32 bits),
+  // brute-forceable in a realistic timeframe against /validate.
+  const randomHex = crypto.randomBytes(8).toString('hex').toUpperCase();
+  const suffix = `${randomHex.substring(0, 4)}-${randomHex.substring(4, 8)}-${randomHex.substring(8)}`;
   const prefix = product.toUpperCase();
   const typeTag = key_type.toUpperCase();
   const licenseKey = `${prefix}-${typeTag}-${suffix}`;

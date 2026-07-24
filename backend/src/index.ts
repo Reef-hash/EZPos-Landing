@@ -22,6 +22,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Render puts one reverse proxy in front of this app (which itself sits
+// behind Cloudflare) — without this, req.ip resolves to Render's internal
+// proxy address for every request, which silently breaks per-IP
+// rate-limiting (express-rate-limit) and the IP attribution in
+// lib/securityLog.ts (everyone would share one bucket/one logged IP).
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
