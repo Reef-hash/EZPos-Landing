@@ -4,7 +4,6 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
-import Script from 'next/script';
 
 config.autoAddCss = false;
 
@@ -50,66 +49,12 @@ export const metadata: Metadata = {
   },
 };
 
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'EZPos',
-  url: SITE_URL,
-  logo: `${SITE_URL}/logo.png`,
-  contactPoint: [
-    {
-      '@type': 'ContactPoint',
-      telephone: '+60-12-345-6789',
-      contactType: 'customer support',
-      availableLanguage: ['English', 'Malay'],
-    },
-  ],
-  email: 'support@ezpos.my',
-  sameAs: [
-    'https://www.facebook.com/ezposmy',
-    'https://www.instagram.com/ezposmy',
-  ],
-};
-
-const softwareAppJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'EZPos Desktop',
-  operatingSystem: 'Windows',
-  applicationCategory: 'BusinessApplication',
-  description:
-    'EZPos Desktop is a Windows POS application for retail shops featuring barcode scanning, stock management, receipt printing, and offline operation.',
-  offers: {
-    '@type': 'Offer',
-    price: '599',
-    priceCurrency: 'MYR',
-    url: `${SITE_URL}/pricing`,
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'EZPos',
-    url: SITE_URL,
-  },
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>
         {children}
         <Toaster position="top-right" />
-        <Script
-          id="json-ld-org"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-          strategy="afterInteractive"
-        />
-        <Script
-          id="json-ld-app"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { stripe } from '../lib/stripe';
 import { supabase } from '../lib/supabase';
 import { sendLicenseEmail, sendEntitlementStatusEmail } from '../lib/email';
+import { logSecurityEvent, webhookInvalidSignatureMessage } from '../lib/securityLog';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 
@@ -21,6 +22,12 @@ router.post('/', express_rawBody, async (req: Request, res: Response) => {
     );
   } catch (err) {
     console.error('Webhook signature error:', err);
+    void logSecurityEvent({
+      type: 'webhook_signature_invalid',
+      severity: 'medium',
+      req,
+      message: webhookInvalidSignatureMessage(req.ip ?? 'unknown'),
+    });
     res.status(400).json({ error: 'Webhook signature verification failed' });
     return;
   }

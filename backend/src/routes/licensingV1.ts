@@ -1,8 +1,27 @@
 import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { supabase } from '../lib/supabase';
 import { z } from 'zod';
+import {
+  logSecurityEvent, entitlementProbeMessage, transferConfirmBlockedMessage,
+} from '../lib/securityLog';
 
 const router = Router();
+
+// Mirrors requireAdmin in middleware/auth.ts, but non-throwing: this router
+// is public-by-design (desktop clients call it with no session), so a few
+// specific endpoints need to *optionally* recognize an admin caller without
+// gating the whole router behind requireAdmin.
+function getAdminEmailFromRequest(req: Request): string | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  try {
+    const payload = jwt.verify(authHeader.substring(7), process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as { email: string };
+    return payload.email;
+  } catch {
+    return null;
+  }
+}
 
 type ProductType = 'ezpos' | 'crossxpos' | 'ezoffice';
 type ValidationStatus =
@@ -818,7 +837,11 @@ router.post('/transfers/request', async (req: Request, res: Response) => {
     return;
   }
 
-  // Find the current activation for this device
+  // Find the current activation for this device. This must exist — a
+  // transfer request proves you currently hold the active seat you're
+  // asking to move. Without this check, anyone who merely knew the license
+  // key could open a transfer request with a made-up fromDeviceId and later
+  // confirm it onto a device of their choosing (see docs/pentest notes).
   const { data: fromActivation } = await supabase
     .from('activations')
     .select('id')
@@ -826,6 +849,11 @@ router.post('/transfers/request', async (req: Request, res: Response) => {
     .eq('device_id', fromDeviceId)
     .eq('status', 'active')
     .maybeSingle();
+
+  if (!fromActivation) {
+    res.status(403).json({ error: 'fromDeviceId is not an active device on this license' });
+    return;
+  }
 
   // Determine transfer mode from policy
   const policy = await getProductPolicyFromDb(entitlementId);
@@ -835,7 +863,7 @@ router.post('/transfers/request', async (req: Request, res: Response) => {
     .from('transfer_requests')
     .insert({
       entitlement_id: entitlementId,
-      from_activation_id: fromActivation?.id ?? null,
+      from_activation_id: fromActivation.id,
       to_device_id: toDeviceId ?? null,
       status: 'requested',
       requested_by: requestedBy ?? fromDeviceId,
@@ -898,6 +926,26 @@ router.post('/transfers/confirm', async (req: Request, res: Response) => {
     return;
   }
 
+  // Enforce the product's actual transfer policy. Previously this endpoint
+  // executed the transfer regardless of policy — 'admin_mediated' was only
+  // ever a hint in the /transfers/request response text, so anyone holding
+  // a transferRequestId could self-approve even an admin-only transfer.
+  const policy = await getProductPolicyFromDb(transferReq.entitlement_id);
+  const transferMode = policy?.transfer_mode ?? 'admin_mediated';
+  const adminEmail = getAdminEmailFromRequest(req);
+
+  if (transferMode === 'admin_mediated' && !adminEmail) {
+    void logSecurityEvent({
+      type: 'transfer_confirm_blocked',
+      severity: 'high',
+      req,
+      message: transferConfirmBlockedMessage(req.ip ?? 'unknown', transferRequestId),
+      meta: { transferRequestId, entitlementId: transferReq.entitlement_id },
+    });
+    res.status(403).json({ error: 'This transfer requires admin approval — sign in as admin to confirm it.' });
+    return;
+  }
+
   // Release old activation
   if (transferReq.from_activation_id) {
     await supabase
@@ -933,14 +981,14 @@ router.post('/transfers/confirm', async (req: Request, res: Response) => {
     .update({
       status: 'completed',
       to_device_id: toDeviceId,
-      reviewed_by: confirmedBy ?? 'system',
+      reviewed_by: adminEmail ?? confirmedBy ?? 'self_service',
       updated_at: new Date().toISOString(),
     })
     .eq('id', transferRequestId);
 
   await supabase.from('audit_events').insert({
-    actor_type: confirmedBy ? 'admin' : 'system',
-    actor_id: confirmedBy ?? 'system',
+    actor_type: adminEmail ? 'admin' : 'customer',
+    actor_id: adminEmail ?? confirmedBy ?? 'self_service',
     action: 'transfer_confirmed',
     entity_type: 'transfer_request',
     entity_id: transferRequestId,
@@ -961,12 +1009,31 @@ router.post('/transfers/confirm', async (req: Request, res: Response) => {
 });
 
 // GET /api/v1/licensing/entitlements/:id
+// Requires either a matching licenseKey (proves the caller already holds the
+// credential for this entitlement) or a valid admin session. Without one of
+// those this endpoint used to return the full record — including the
+// customer's name/email, license key, and every device ID — to anyone who
+// could produce the entitlement UUID, which appears in other API responses
+// and isn't treated as a secret. See docs/pentest notes.
 router.get('/entitlements/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const licenseKey = req.query.licenseKey as string | undefined;
 
   if (!id.match(/^[0-9a-f-]{36}$/i)) {
     res.status(400).json({ error: 'Invalid entitlement ID format' });
+    return;
+  }
+
+  const isAdmin = getAdminEmailFromRequest(req) !== null;
+  if (!licenseKey && !isAdmin) {
+    void logSecurityEvent({
+      type: 'entitlement_probe_blocked',
+      severity: 'medium',
+      req,
+      message: entitlementProbeMessage(req.ip ?? 'unknown', id),
+      meta: { entitlementId: id },
+    });
+    res.status(401).json({ error: 'licenseKey query param or admin session required' });
     return;
   }
 
@@ -989,11 +1056,18 @@ router.get('/entitlements/:id', async (req: Request, res: Response) => {
     return;
   }
 
-  // If licenseKey provided, verify it belongs to this entitlement
-  if (licenseKey) {
+  // If licenseKey provided (non-admin path), verify it belongs to this entitlement
+  if (licenseKey && !isAdmin) {
     const creds = entitlement.license_credentials as Array<{ license_key: string }> | null;
     const match = creds?.some(c => c.license_key === licenseKey.trim());
     if (!match) {
+      void logSecurityEvent({
+        type: 'entitlement_probe_blocked',
+        severity: 'medium',
+        req,
+        message: entitlementProbeMessage(req.ip ?? 'unknown', id),
+        meta: { entitlementId: id, reason: 'key_mismatch' },
+      });
       res.status(403).json({ error: 'License key does not match this entitlement' });
       return;
     }
