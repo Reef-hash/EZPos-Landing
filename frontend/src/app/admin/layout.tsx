@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGauge, faKey, faTags, faChartLine,
   faBoxesStacked,
   faRightFromBracket, faShieldHalved, faWifi, faFlask, faBug,
+  faBars, faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
 const navItems = [
@@ -23,29 +24,60 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/admin/login';
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
+    if (isLoginPage) return;
     const token = localStorage.getItem('admin_token');
     if (!token) router.replace('/admin/login');
-  }, [router]);
+  }, [router, isLoginPage]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   function logout() {
     localStorage.removeItem('admin_token');
     router.replace('/admin/login');
   }
 
+  if (isLoginPage) return <>{children}</>;
+
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Mobile backdrop */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
-        <div className="px-6 py-5 border-b border-gray-800">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faShieldHalved} className="w-5 h-5 text-brand-400" />
-            <span className="font-bold text-lg">EZPos Admin</span>
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-gray-900 text-white flex flex-col transform transition-transform duration-200 md:static md:translate-x-0 ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-6 py-5 border-b border-gray-800 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faShieldHalved} className="w-5 h-5 text-brand-400" />
+              <span className="font-bold text-lg">EZPos Admin</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">Management Portal</p>
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">Management Portal</p>
+          <button
+            onClick={() => setMobileNavOpen(false)}
+            className="md:hidden text-gray-400 hover:text-white"
+            aria-label="Close menu"
+          >
+            <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <Link
               key={item.href}
@@ -69,8 +101,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <main className="p-8">{children}</main>
+      <div className="flex-1 overflow-auto min-w-0">
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="text-gray-600 hover:text-gray-900"
+            aria-label="Open menu"
+          >
+            <FontAwesomeIcon icon={faBars} className="w-5 h-5" />
+          </button>
+          <span className="font-bold text-gray-900">EZPos Admin</span>
+        </div>
+        <main className="p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
