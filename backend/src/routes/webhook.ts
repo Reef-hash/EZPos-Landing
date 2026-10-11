@@ -3,6 +3,7 @@ import { stripe } from '../lib/stripe';
 import { supabase } from '../lib/supabase';
 import { sendLicenseEmail, sendEntitlementStatusEmail } from '../lib/email';
 import { logSecurityEvent, webhookInvalidSignatureMessage } from '../lib/securityLog';
+import { ensureAuthUser } from '../lib/authUser';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 
@@ -280,6 +281,10 @@ async function createV1LicensingRecords(params: V1RecordParams): Promise<void> {
     if (customerErr || !newCustomer) throw new Error(`Customer insert failed: ${customerErr?.message}`);
     customerId = newCustomer.id;
   }
+
+  // Needed for EZOffice's email-OTP activation; ensureAuthUser never throws,
+  // so an auth hiccup can't make Stripe retry an otherwise-successful payment.
+  await ensureAuthUser(customerEmail);
 
   // 4. Create entitlement
   const { data: entitlement, error: entitlementErr } = await supabase

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { requireAdmin, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { ensureAuthUser } from '../lib/authUser';
 
 type KeyType = 'production' | 'manual' | 'demo' | 'internal';
 
@@ -267,6 +268,10 @@ router.post('/keys/generate', async (req: AuthRequest, res: Response) => {
     customerId = newCust.id;
   }
 
+  // Runs for existing customers too, so customers issued before this existed
+  // get an Auth user the next time they're issued a key.
+  const authUser = await ensureAuthUser(customer_email);
+
   // Determine expiry: demo/internal = 30 days, manual = lifetime (36500d)
   const durationDays = (key_type === 'demo' || key_type === 'internal') ? 30 : 36500;
   const expiresAt = new Date();
@@ -349,6 +354,7 @@ router.post('/keys/generate', async (req: AuthRequest, res: Response) => {
     customer_email,
     expires_at: expiresAt.toISOString(),
     entitlement_id: entitlement.id,
+    ...(authUser.ok ? {} : { auth_user_warning: `Could not create login account: ${authUser.error}. Customer may be unable to receive an activation code.` }),
   });
 });
 
